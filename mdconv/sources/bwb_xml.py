@@ -256,6 +256,15 @@ class BwbOmzetter:
             # `inline_el()` niet kent, blijft een weigering.
             self.u.blok(self.aaneen(el))
             return
+        if el.tag == "considerans.lijst":
+            # De grondslagen onder `Gelet op:` zijn een genummerde lijst (`<li.nr>a.</li.nr>`).
+            # Kind voor kind plat geslagen viel het nummer weg (`li.nr` staat in `OVERSLAAN`):
+            # in het Besluit elektronisch procederen (BWBR0044275) stonden de vier grondslagen
+            # er zonder `a.`–`d.`, en alleen de bronlezing van de kennisbank zag het (kb G8 R1,
+            # H7). Nu zoals elke BWB-lijst (`- a. …`), zonder basis en dus zonder eenheid: de
+            # aanhef heeft geen artikel om een onderdeel aan te hangen (kb WP-103).
+            self.u.blok(self.lijst(el, basis="", extra="", diepte=0, prefix_noot=""))
+            return
         alleen_inline = all(c.tag in INLINE for c in el)
         if el.tag in ("al", "considerans.al", "wij", "slotformulering", "afkondiging") or alleen_inline:
             self.u.blok(ws(self.inline(el)))

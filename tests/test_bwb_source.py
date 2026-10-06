@@ -193,6 +193,21 @@ def test_not_yet_effective_status_on_anything_but_an_article_is_refused():
         wetten.bwb_xml.omzetten(xml)
 
 
+def test_considerans_lijst_houdt_haar_nummering_zonder_eenheid():
+    """Het Besluit elektronisch procederen (BWBR0044275): `plat()` sloeg `<li.nr>` over, en de vier
+    grondslagen onder `Gelet op:` stonden er zonder `a.`–`d.` (kb G8 R1, H7). Nu een lijst zoals elke
+    BWB-lijst, zonder eenheid: de aanhef heeft geen artikel."""
+    xml = toestand().replace(b"<wettekst>", (
+        "<aanhef><considerans><considerans.al>Gelet op:</considerans.al>"
+        '<considerans.lijst bevat="grondslag" type="expliciet">'
+        "<li><li.nr>a.</li.nr><al>artikel 33 van het Wetboek;</al><meta-data/></li>"
+        "<li><li.nr>b.</li.nr><al>artikel 46 van de Uitvoeringswet;</al></li>"
+        "</considerans.lijst></considerans></aanhef><wettekst>").encode(), 1)
+    markdown, eenheden, _, _ = wetten.bwb_xml.omzetten(xml)
+    assert "Gelet op:\n\n- a. artikel 33 van het Wetboek;\n- b. artikel 46 van de Uitvoeringswet;\n\n" in markdown
+    assert [e.anker for e in eenheden] == ["art-1", "art-1-1"]
+
+
 def test_withdrawn_regulation_uses_last_version(monkeypatch):
     xml = toestand()
 
