@@ -67,6 +67,18 @@ _PORTAL_ATTEMPTS = 6
 _FORMEX_MEDIA_TYPE = "application/zip;mtype=fmx4"
 _FORMEX_LANGUAGES = {"NL": "nld", "EN": "eng", "DE": "deu", "FR": "fra"}
 
+def _celex_url(celex: str) -> str:
+    """De Cellar-resource van een CELEX, URL-gecodeerd.
+
+    Een volgnummer tussen haakjes (`62015CV0001(01)`, Advies 1/15) gaf ongecodeerd een 404
+    (`Resource [system 'celex' - id '62015CV0001(01)']`), gecodeerd (`%2801%29`) de Formex. Alleen
+    de ECLI-tak codeerde, en de 404 heette dan "geen Formex, arrest te nieuw" voor een advies uit
+    2017 (kb WP-92, G3 R2; M22 van de grote test van oktober 2026). Voor elk ander CELEX is de
+    codering de identiteit: cijfers, hoofdletters en het koppelteken van een consolidatiedatum.
+    """
+    return f"http://publications.europa.eu/resource/celex/{quote(celex, safe='')}"
+
+
 
 def extract_celex(text: str) -> str | None:
     """Haal een CELEX-identifier uit een losse string of een EUR-Lex URL."""
@@ -216,7 +228,7 @@ def _formex_zip(celex: str, lang: str):
     `soort` is "niet bereikbaar" (het netwerk) of "niet beschikbaar" (de Cellar
     antwoordt, maar niet met een zip); beide staan letterlijk in de melding.
     """
-    url = f"http://publications.europa.eu/resource/celex/{celex}"
+    url = _celex_url(celex)
     try:
         response = net.documents().get(
             url, headers=_formex_headers(lang), timeout=_CELLAR_TIMEOUT, allow_redirects=True,
@@ -335,7 +347,7 @@ def _fetch_hof(ident: str, lang: str, *, requested_url: str):
     if ident.upper().startswith("ECLI:"):
         url = f"http://publications.europa.eu/resource/ecli/{quote(ident, safe='')}"
     else:
-        url = f"http://publications.europa.eu/resource/celex/{ident}"
+        url = _celex_url(ident)
     try:
         response = net.documents().get(
             url, headers=_formex_headers(lang), timeout=_CELLAR_TIMEOUT, allow_redirects=True,
@@ -472,7 +484,7 @@ def _html_herkomst(celex: str, lang: str, requested_url: str,
         celex=celex,
         language=lang.lower(),
         source_url=(f"https://eur-lex.europa.eu/legal-content/{lang}/TXT/?uri=CELEX:{celex}"
-                    if portal else f"http://publications.europa.eu/resource/celex/{celex}"),
+                    if portal else _celex_url(celex)),
         requested_url=requested_url,
         waarschuwingen=waarschuwingen,
     )
@@ -490,7 +502,7 @@ def _cellar_headers(lang: str) -> dict[str, str]:
 
 def _fetch_cellar(celex: str, lang: str) -> str | None:
     """Markdown uit Cellar via content negotiation, of None."""
-    url = f"http://publications.europa.eu/resource/celex/{celex}"
+    url = _celex_url(celex)
     r = net.documents().get(
         url, headers=_cellar_headers(lang), timeout=_CELLAR_TIMEOUT, allow_redirects=True,
     )
@@ -989,7 +1001,7 @@ def _fetch_preamble(base_celex: str, lang: str):
     """
     try:
         r = net.documents().get(
-            f"http://publications.europa.eu/resource/celex/{base_celex}",
+            _celex_url(base_celex),
             headers=_cellar_headers(lang), timeout=_CELLAR_TIMEOUT, allow_redirects=True,
         )
         if r.status_code != 200:
@@ -998,7 +1010,7 @@ def _fetch_preamble(base_celex: str, lang: str):
         soup = BeautifulSoup(original_html, "lxml")
         pbl = soup.find(id="pbl_1")
         if pbl is not None:
-            record_html(original_html, source_url=getattr(r, "url", "") or f"http://publications.europa.eu/resource/celex/{base_celex}", identifier=base_celex, language=lang, role="preamble")
+            record_html(original_html, source_url=getattr(r, "url", "") or _celex_url(base_celex), identifier=base_celex, language=lang, role="preamble")
             _attach_preamble_notes(soup, pbl)
         return pbl
     except Exception:
