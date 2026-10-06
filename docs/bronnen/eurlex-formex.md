@@ -291,7 +291,9 @@ architectuur en verwijst hiernaartoe.
   inmiddels een AWS WAF-JS-challenge, dus ook met retries permanent 202 — de portal is in de praktijk
   dood voor een simpele `requests`-scraper). Gebruik het **Cellar-archief** via content negotiation,
   `Accept: application/xhtml+xml, text/html;q=0.9`:
-  - CELEX: `http://publications.europa.eu/resource/celex/{CELEX}`
+  - CELEX: `http://publications.europa.eu/resource/celex/{CELEX}` — ook **url-encoded** (`_celex_url()`): een
+    volgnummer tussen haakjes (`62015CV0001(01)`) geeft ongecodeerd 404, gecodeerd (`%2801%29`) het document
+    (kb WP-105, 6 oktober 2026; tot dan codeerde alleen de ECLI-tak).
   - EU-ECLI: `http://publications.europa.eu/resource/ecli/{ECLI}` — ECLI **url-encoded** (`ECLI%3AEU%3AC%3A…`), anders 404.
   `Accept-Language` bepaalt de taal. `notice=object` geeft alléén metadata, niet de tekst.
 - **Cellar 300 (multiple choice) is niet alleen een taalprobleem.** Sommige documenten — met name
@@ -302,6 +304,19 @@ architectuur en verwijst hiernaartoe.
   worden opgehaald, niet `application/xhtml+xml` — de manifestatie-URL zelf heeft `text/html` als
   resource-mimetype en geeft anders 406. Voorbeeld: `CELEX:52025PC0837` (voorstel + bijlage).
   Alleen als er géén `DOC_n`-links in de 300-respons staan, is het wél een taalprobleem.
+- **Een weigering zegt wat er wél is** (kb WP-105, 6 oktober 2026). Komt er geen document, dan vraagt
+  `_beschikbaar()` de Cellar-metadata (SPARQL, `_manifestaties()`) per manifestatietype in welke talen het
+  document bestaat, en de melding zegt dat letterlijk: "In het Nederlands heeft de Cellar 32004D0411 alleen
+  als pdf en print; fmx4 is er in het Engels, Frans en Kroatisch; …". Zegt de metadata dat de gevraagde vorm
+  er wél is, dan zegt de melding dat ook (de fout zit dan in het verzoek). Zijn de metadata niet bereikbaar,
+  dan staat dat er; er wordt niets geraden. Op een ECLI telt alleen een werk met een gewone CELEX: dezelfde
+  ECLI hangt ook aan de samenvatting (`62023CJ0654_RES`). De **EUR-Lex-foutpagina** is een weigering: op
+  5 oktober 2026 gaf `TXT/HTML/?uri=CELEX:32004D0411` (en 32004L0048) HTTP 200 met de portaalpagina en een
+  blok `#errorDocumentView` ("The requested document does not exist."); die werd als bron bewaard en `ok`
+  gemeld, en pas de kennisbank weigerde, op de titel `×` van de cookiebanner. `_eurlex_foutpagina()` herkent
+  het blok (de vorm, niet de taal) vóór `record_html`, dus een foutpagina wordt nooit bronbewijs. Een
+  portal die niets geeft (status 202) noemt dezelfde metadata. De meetlat raakt het netwerk niet en krijgt
+  daar "was niet na te gaan"; de zin "geen Formex-manifestatie" blijft, want de meetlat telt erop.
 - **ELI-links** (`/eli/reg/2016/679/oj`): Cellar resolvet ELI **niet** direct (404) en de portal blokkeert.
   Een vierde padsegment in datumvorm (`/eli/reg/2014/910/2024-10-18`) is de consolidatiedatum en
   levert de geconsolideerde CELEX (sector 0 + datum); `/oj` en andere segmenten niet. Die datum

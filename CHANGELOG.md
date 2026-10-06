@@ -3,6 +3,24 @@
 Nieuwste bovenaan. De inhoudelijke uitleg staat in `CLAUDE.md`; hier alleen wat er
 veranderde en waarom.
 
+## 6 oktober 2026 — eerlijke ophaalmeldingen voor EUR-Lex en het Hof (kb WP-105)
+
+- **EUR-Lex-foutpagina is een weigering** (`_eurlex_foutpagina()`): de portal gaf voor 32004D0411 en 32004L0048
+  HTTP 200 met een portaalpagina (`#errorDocumentView`, "The requested document does not exist."); die werd als
+  bron bewaard en `ok` gemeld. Nu een weigering met die melding, vóór er bronbewijs is.
+- **Een weigering noemt wat de Cellar wél heeft** (`_manifestaties()`, `_beschikbaar()`): bij een 404 op de
+  Formex van het Hof, en bij een HTML-route die niets geeft. Tot nu toe stond er bij elke 404 van het Hof "een
+  arrest van de laatste dagen of weken"; Inteligo Media (62023CJ0654) en Russmedia (62023CJ0492) hebben Formex in
+  22 en 23 talen en in het Nederlands alleen HTML. Geen terugval op HTML of een andere taal (besluit 14 van de
+  kennisbank). De meetlat raakt het netwerk niet en krijgt "was niet na te gaan"; "geen Formex-manifestatie" blijft.
+- **Een CELEX wordt URL-gecodeerd** (`_celex_url()`, alle vier `resource/celex/`-verzoeken): `62015CV0001(01)`
+  (Advies 1/15) gaf ongecodeerd 404 en heette "geen Formex"; gecodeerd komt de Formex, en weigert de omzetter het
+  advies op zijn soort (`OPINION`, niet ondersteund).
+- Tests: `tests/test_eurlex_ophaalmeldingen.py` (21, waarvan 19 falen op de oude code; de twee andere zijn de
+  tegenvoorbeelden), en de 404-test van het Hof telt het metadataverzoek. 670 tests. Meetlat (alleen Formex): geen
+  verschil. Opgehaald met `kb_fetch`: de vijf getuigen geweigerd met de ware reden, 32003D0821 en 32001R0045 `ok`
+  met dezelfde bron als vooraf.
+
 ## 6 oktober 2026 — de considerans-lijst en nog niet geldende structuur in de BWB-XML (kb WP-103)
 
 - **`<considerans.lijst>`** (`plat()`): de grondslagen onder `Gelet op:` kregen hun nummer niet, want
