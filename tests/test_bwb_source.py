@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import hashlib
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -185,12 +186,27 @@ def test_the_reversed_heading_warning_travels_with_the_provenance(monkeypatch):
             "de omzetter volgt die volgorde.") in document.provenance.waarschuwingen
 
 
-def test_not_yet_effective_status_on_anything_but_an_article_is_refused():
-    """Alleen bij een artikel weet de omzetter hoe hij dit toont; elders is het een weigering."""
-    xml = toestand().replace(b"<artikel ", b'<hoofdstuk status="nogniet" inwerking="2020-01-01"><kop><label>Hoofdstuk</label><nr>1</nr><titel>Eerste</titel></kop><artikel ', 1).replace(
-        b"</artikel>", b"</artikel></hoofdstuk>", 1)
-    with pytest.raises(ConversionError, match="nogniet"):
-        wetten.bwb_xml.omzetten(xml)
+def in_container(xml: bytes, tag: str, status: str, nr: str = "1", binnen: bytes = b"") -> bytes:
+    """Zet het artikel van `toestand()` in een `<tag status=…>` met kop (en eventueel iets ervóór)."""
+    kop = f'<{tag} status="{status}"><kop><label>{tag.capitalize()}</label><nr>{nr}</nr><titel>Eerste</titel></kop>'
+    return xml.replace(b"<artikel ", kop.encode() + binnen + b"<artikel ", 1).replace(
+        b"</artikel>", f"</artikel></{tag}>".encode(), 1)
+
+
+FIXTURE_BWB = Path(__file__).parent / "fixtures" / "bwb"
+
+
+def test_considerans_lijst_en_nog_niet_geldende_structuur_geven_de_raw_vorm_van_de_kennisbank():
+    """De fixture van kb WP-103 (`tests/fixtures/bwb/README.md`): de kennisbank las deze raw-vorm eerst met
+    haar eigen planner, poort en bronlezing (0 bevindingen); de omzetter moet haar byte voor byte schrijven."""
+    markdown, eenheden, onbekend, _ = wetten.bwb_xml.omzetten((FIXTURE_BWB / "considerans-nogniet.xml").read_bytes())
+    assert markdown == (FIXTURE_BWB / "considerans-nogniet.md").read_text(encoding="utf-8")
+    assert not onbekend
+    # De koppen van het nog niet geldende deel houden hun eenheid; de leden van een artikel erin niet.
+    assert [e.anker for e in eenheden] == [
+        "hfd-1", "art-1", "art-1-1", "art-1-1-a", "art-1-1-b", "art-1-2", "hfd-2", "hfd-3", "par-3-1",
+        "art-3-1-1", "par-3-2", "art-3-2-1", "art-3-2-2", "hfd-4", "afd-4-4-1", "art-4a", "art-4b",
+        "art-4b-a", "art-4b-b", "hfd-5", "art-5"]
 
 
 def test_considerans_lijst_houdt_haar_nummering_zonder_eenheid():
@@ -206,6 +222,64 @@ def test_considerans_lijst_houdt_haar_nummering_zonder_eenheid():
     markdown, eenheden, _, _ = wetten.bwb_xml.omzetten(xml)
     assert "Gelet op:\n\n- a. artikel 33 van het Wetboek;\n- b. artikel 46 van de Uitvoeringswet;\n\n" in markdown
     assert [e.anker for e in eenheden] == ["art-1", "art-1-1"]
+
+
+def test_nog_niet_geldend_hoofdstuk_krijgt_kop_melding_en_artikelen_zoals_een_nog_niet_geldend_artikel():
+    """Besluit 12 (kb WP-103, M1): tot dan weigerde een `<hoofdstuk status="nogniet">` de hele regeling.
+    Nu de kop met eenheid en de melding eronder, en het artikel erin (zonder eigen status) zoals een nog
+    niet geldend artikel: melding onder de kop, het lid als platte alinea, geen lideenheid."""
+    markdown, eenheden, _, _ = wetten.bwb_xml.omzetten(in_container(toestand(), "hoofdstuk", "nogniet"))
+    assert ("## Hoofdstuk 1. Eerste\n\n[Nog niet in werking getreden.]\n\n### Artikel 1. Reikwijdte\n\n"
+            "[Nog niet in werking getreden.]\n\n1. Deze wet geldt.") in markdown
+    assert [e.anker for e in eenheden] == ["hfd-1", "art-1"]
+
+
+@pytest.mark.parametrize("tag", ["afdeling", "paragraaf"])
+def test_nog_niet_geldende_afdeling_en_paragraaf_volgen_dezelfde_vorm(tag):
+    markdown, eenheden, _, _ = wetten.bwb_xml.omzetten(in_container(toestand(), tag, "nogniet"))
+    assert "Eerste\n\n[Nog niet in werking getreden.]\n\n### Artikel 1. Reikwijdte\n\n[Nog niet in werking getreden.]" in markdown
+    assert [e.anker for e in eenheden][1:] == ["art-1"]
+
+
+def test_een_geldend_hoofdstuk_geeft_niets_door():
+    markdown, eenheden, _, _ = wetten.bwb_xml.omzetten(in_container(toestand(), "hoofdstuk", "goed"))
+    assert "Nog niet in werking" not in markdown
+    assert [e.anker for e in eenheden] == ["hfd-1", "art-1", "art-1-1"]
+
+
+def test_structuurtekst_met_redactie_staat_onder_de_kop_in_plaats_van_de_melding():
+    """Het Besluit digitale overheid (BWBR0037987), Hoofdstuk 5: geen artikel, alleen de redactieregel."""
+    binnen = (b'<structuurtekst><al><redactie type="vervanging">Dit onderdeel is nog niet inwerking getreden'
+              b"</redactie></al></structuurtekst>")
+    markdown, _, _, _ = wetten.bwb_xml.omzetten(in_container(toestand(), "hoofdstuk", "nogniet", binnen=binnen))
+    assert ("## Hoofdstuk 1. Eerste\n\n[Red: Dit onderdeel is nog niet inwerking getreden]\n\n"
+            "### Artikel 1. Reikwijdte\n\n[Nog niet in werking getreden.]") in markdown
+
+
+def test_structuurtekst_buiten_een_nog_niet_geldend_element_is_een_weigering():
+    """Niet gemeten: in de 125 BWB-bronnen van de kennisbank alleen onder een nog niet geldend hoofdstuk."""
+    binnen = b"<structuurtekst><al>Tekst.</al></structuurtekst>"
+    with pytest.raises(ConversionError, match="structuurtekst"):
+        wetten.bwb_xml.omzetten(in_container(toestand(), "hoofdstuk", "goed", binnen=binnen))
+
+
+@pytest.mark.parametrize("tag", ["deel", "titeldeel", "boek"])
+def test_status_nogniet_op_een_ander_structuurelement_blijft_een_weigering(tag):
+    """Besluit 12 is gemeten op een hoofdstuk, afdeling en paragraaf; elders weigeren we liever dan te raden."""
+    with pytest.raises(ConversionError, match="nogniet"):
+        wetten.bwb_xml.omzetten(in_container(toestand(), tag, "nogniet"))
+
+
+def test_status_nogniet_op_een_lid_blijft_een_weigering():
+    xml = toestand().replace(b"<lid>", b'<lid status="nogniet">', 1)
+    with pytest.raises(ConversionError, match="nogniet"):
+        wetten.bwb_xml.omzetten(xml)
+
+
+def test_een_vervallen_artikel_in_een_nog_niet_geldend_onderdeel_wordt_geweigerd():
+    xml = in_container(toestand(status="vervallen", artikel_inwerking="2021-03-04"), "hoofdstuk", "nogniet")
+    with pytest.raises(ConversionError, match="nog niet geldt"):
+        wetten.bwb_xml.omzetten(xml)
 
 
 def test_withdrawn_regulation_uses_last_version(monkeypatch):

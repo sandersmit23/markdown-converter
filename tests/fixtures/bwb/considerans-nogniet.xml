@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<toestand bwb-id="BWBR9999103" inwerkingtreding="2026-01-01">
+<wetgeving>
+<intitule>Besluit van 1 januari 2026, houdende regels over de proefdienst (Proefbesluit nog niet geldend)</intitule>
+<citeertitel>Proefbesluit nog niet geldend</citeertitel>
+<wet-besluit>
+<aanhef>
+<wij>Wij Willem-Alexander, bij de gratie Gods, Koning der Nederlanden, Prins van Oranje-Nassau, enz. enz. enz.</wij>
+<considerans>
+<considerans.al bevat="voordracht">Op de voordracht van Onze Minister van Proeven van 1 december 2025, nr. 123456,</considerans.al>
+<considerans.al>Gelet op:</considerans.al>
+<considerans.lijst bevat="grondslag" type="expliciet">
+<li bwb-ng-variabel-deel="/Aanhef/Onderdeela"><li.nr>a.</li.nr><al>artikel 1, tweede lid, van de <extref doc="jci1.3:c:BWBR9999001">Proefwet</extref>;</al><meta-data><jcis><jci versie="1.3" verwijzing="jci1.3:c:BWBR9999103&amp;o=a" onderdeel="o=a"/></jcis></meta-data></li>
+<li bwb-ng-variabel-deel="/Aanhef/Onderdeelb"><li.nr>b.</li.nr><al>artikel 2 van de Proefwet; en</al></li>
+<li bwb-ng-variabel-deel="/Aanhef/Onderdeelc"><li.nr>c.</li.nr><al>artikel 3 van de Tweede proefwet;</al></li>
+</considerans.lijst>
+<considerans.al>De Afdeling advisering van de Raad van State gehoord (advies van 1 november 2025);</considerans.al>
+</considerans>
+<afkondiging><al>Hebben goedgevonden en verstaan:</al></afkondiging>
+</aanhef>
+<wettekst>
+<hoofdstuk bwb-ng-variabel-deel="/Hoofdstuk1" status="goed"><kop><label>Hoofdstuk</label><nr>1</nr><titel>Algemeen</titel></kop>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk1/Artikel1" status="goed"><kop><label>Artikel</label><nr>1</nr><titel>Begrippen</titel></kop>
+<lid><lidnr>1</lidnr><al>In dit besluit wordt verstaan onder:</al><lijst><li><li.nr>a.</li.nr><al>proef: een proef van de dienst;</al></li><li><li.nr>b.</li.nr><al>dienst: de proefdienst.</al></li></lijst></lid>
+<lid><lidnr>2</lidnr><al>Dit lid geldt al.</al></lid>
+</artikel>
+</hoofdstuk>
+<hoofdstuk bwb-ng-variabel-deel="/Hoofdstuk2" status="nogniet"><kop><label>Hoofdstuk</label><nr>2</nr><titel>Toegang tot de proefdienst</titel></kop><structuurtekst><al><redactie type="vervanging">Dit onderdeel is nog niet inwerking getreden</redactie></al></structuurtekst></hoofdstuk>
+<hoofdstuk bwb-ng-variabel-deel="/Hoofdstuk3" status="goed"><kop><label>Hoofdstuk</label><nr>3</nr><titel>Verstrekking</titel></kop>
+<paragraaf bwb-ng-variabel-deel="/Hoofdstuk3/Paragraaf3.1" status="goed"><kop><label>§</label><nr>3.1</nr><titel>Geldende verstrekking</titel></kop>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk3/Paragraaf3.1/Artikel3.1.1" status="goed"><kop><label>Artikel</label><nr>3.1.1</nr><titel>Verstrekking</titel></kop><al>Onze Minister verstrekt de gegevens.</al></artikel>
+</paragraaf>
+<paragraaf bwb-ng-variabel-deel="/Hoofdstuk3/Paragraaf3.2" status="nogniet"><kop><label>§</label><nr>3.2</nr><titel>Uitkering</titel></kop>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk3/Paragraaf3.2/Artikel3.2.1"><kop><label>Artikel</label><nr>3.2.1</nr><titel>Aanspraak</titel></kop>
+<lid><lidnr>1</lidnr><al>Een aanspraak bestaat, indien:</al><lijst><li><li.nr>a.</li.nr><al>de proef is geslaagd, en</al></li><li><li.nr>b.</li.nr><al>de dienst is verleend.</al></li></lijst></lid>
+<lid><lidnr>2</lidnr><al>De aanspraak vervalt na een jaar.</al></lid>
+</artikel>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk3/Paragraaf3.2/Artikel3.2.2" status="nogniet"><kop><label>Artikel</label><nr>3.2.2</nr><titel>Hoogte</titel></kop><al><redactie type="vervanging">Dit onderdeel is nog niet inwerking getreden</redactie></al></artikel>
+</paragraaf>
+</hoofdstuk>
+<hoofdstuk bwb-ng-variabel-deel="/Hoofdstuk4" status="nogniet"><kop><label>Hoofdstuk</label><nr>4</nr><titel>Reisautorisatie</titel></kop>
+<afdeling bwb-ng-variabel-deel="/Hoofdstuk4/Afdeling4.1"><kop><label>Afdeling</label><nr>4.1</nr><titel>Aanvraag</titel></kop>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk4/Afdeling4.1/Artikel4a"><kop><label>Artikel</label><nr>4a</nr><titel>Aanvraag</titel></kop><al>Een aanvraag wordt elektronisch ingediend.</al></artikel>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk4/Afdeling4.1/Artikel4b"><kop><label>Artikel</label><nr>4b</nr><titel>Weigering</titel></kop><al>De aanvraag wordt geweigerd, indien:</al><lijst><li><li.nr>a.</li.nr><al>zij onvolledig is, of</al></li><li><li.nr>b.</li.nr><al>de vergoeding niet is voldaan.</al></li></lijst></artikel>
+</afdeling>
+</hoofdstuk>
+<hoofdstuk bwb-ng-variabel-deel="/Hoofdstuk5" status="goed"><kop><label>Hoofdstuk</label><nr>5</nr><titel>Slotbepalingen</titel></kop>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk5/Artikel5" status="goed"><kop><label>Artikel</label><nr>5</nr><titel>Citeertitel</titel></kop><al>Dit besluit wordt aangehaald als: Proefbesluit nog niet geldend.</al></artikel>
+</hoofdstuk>
+</wettekst>
+<wetsluiting><slotformulering><al>Lasten en bevelen dat dit besluit in het Staatsblad zal worden geplaatst.</al></slotformulering>
+<ondertekening><functie>De Minister van Proeven,</functie> <naam><achternaam>A. Proef</achternaam></naam></ondertekening></wetsluiting>
+</wet-besluit>
+</wetgeving>
+</toestand>

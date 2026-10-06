@@ -25,6 +25,13 @@ INLINE = {"al", "nadruk", "sup", "extref", "intref", "redactie", "sub", "unl", "
 # Regeling register onderwijsdeelnemers (BWBR0043632) en de Regeling Bibob-formulieren 2024
 # (BWBR0049314): `nummer_anker("−")` is leeg, en `eenheid()` weigerde `annex-1-` (T6-F4, kb WP-43).
 ONGEMARKEERD = re.compile(r"^[\-–—−•·*○□]$")
+# De structuurelementen waarop `status="nogniet"` een vorm heeft (besluit 12 van plan 6 in de
+# kennisbank, kb WP-103): de kop, daaronder de `<redactie>`-regel van de bron of de melding, en de
+# artikelen erin zoals een nog niet geldend artikel. Gemeten op een hoofdstuk (Besluit digitale
+# overheid, Vreemdelingenwet 2000), een afdeling (Wft) en een paragraaf (Wft, Wet digitale
+# overheid, Jeugdwet); op elk ander element blijft het een weigering.
+NOG_NIET_STRUCTUUR = {"hoofdstuk", "afdeling", "paragraaf"}
+NOG_NIET_MELDING = "[Nog niet in werking getreden.]"
 
 
 class _BwbUitvoer(Uitvoer):
@@ -194,13 +201,18 @@ class BwbOmzetter:
     # ---------- blokken ----------
     def omzetten(self, root) -> Uitvoer:
         # Tekst die nog niet geldt mag nooit als geldend recht lezen. Bij een
-        # artikel zet `artikel()` er een regel onder de kop; voor elk ander
-        # onderdeel is er geen vorm, en dan weigeren we liever dan te raden.
+        # artikel zet `artikel()` er een regel onder de kop, bij een hoofdstuk,
+        # afdeling of paragraaf `container_inhoud()` (kb WP-103: tot dan weigerde
+        # dit vijf complete regelingen om een paar nog niet geldende artikelen,
+        # M1). Voor elk ander onderdeel is er geen vorm, en dan weigeren we liever
+        # dan te raden.
         for el in root.iter():
-            if el.tag != "artikel" and (el.get("status") or "").lower() == "nogniet":
+            if (el.tag != "artikel" and el.tag not in NOG_NIET_STRUCTUUR
+                    and (el.get("status") or "").lower() == "nogniet"):
                 raise ConversionError(
-                    f"<{el.tag}> heeft status nogniet; alleen bij een artikel weet de "
-                    "omzetter hoe een nog niet geldend onderdeel wordt getoond."
+                    f"<{el.tag}> heeft status nogniet; alleen bij een artikel, hoofdstuk, "
+                    "afdeling of paragraaf weet de omzetter hoe een nog niet geldend "
+                    "onderdeel wordt getoond."
                 )
         # Een noot in een nummer (`<lidnr>1<noot>…</noot></lidnr>`) werd `- 1[^1]`, en
         # `nummer_anker()` maakte daar stil het lidanker `…-11` van. Waar een nummer
@@ -369,7 +381,8 @@ class BwbOmzetter:
             a = f"{CONTAINERS[tag]}-{n}"
         return f"{voor}-{a}" if voor else a
 
-    def container_inhoud(self, el, niveau: int, pad: dict) -> None:
+    def container_inhoud(self, el, niveau: int, pad: dict, nog_niet: bool = False) -> None:
+        """`nog_niet`: een hoofdstuk, afdeling of paragraaf hierboven geldt nog niet (besluit 12, kb WP-103)."""
         for kind in el:
             if kind.tag in CONTAINERS:
                 label, nr, titel, nr_eerst = self.kop(kind)
@@ -378,29 +391,46 @@ class BwbOmzetter:
                 self.u.blok(f"{'#' * min(niveau, 6)} {regel}")
                 self.u.eenheid(anker, kind.tag, regel)
                 self.subtitel(kind)
+                eigen_nog_niet = (kind.get("status") or "").lower() == "nogniet"
+                if eigen_nog_niet and not any(r.tag == "redactie" for st in kind.findall("structuurtekst")
+                                              for r in st.iter()):
+                    # Besluit 12: onder de kop de `<redactie>`-regel van de bron, en zonder die
+                    # regel de melding die een nog niet geldend artikel ook krijgt. De kop houdt
+                    # zijn eenheid, zoals het artikel het zijne (het anker moet blijven bestaan).
+                    self.u.blok(NOG_NIET_MELDING)
                 eigen = anker.split("-", 1)[1] if not pad.get("annex") else anker.split(f"{CONTAINERS[kind.tag]}-", 1)[1]
                 sleutel = {"hoofdstuk": "hfd", "afdeling": "afd", "titeldeel": "tit"}.get(kind.tag)
                 nieuw = dict(pad)
                 if sleutel:
                     nieuw[sleutel] = eigen.split("-")[-1] if sleutel != "tit" else eigen
-                self.container_inhoud(kind, niveau + 1, nieuw)
+                self.container_inhoud(kind, niveau + 1, nieuw, nog_niet or eigen_nog_niet)
             elif kind.tag == "artikel":
-                self.artikel(kind, niveau, pad)
+                self.artikel(kind, niveau, pad, nog_niet)
             elif kind.tag == "circulaire.divisie":
-                self.circulairedivisie(kind, niveau, pad)
+                self.circulairedivisie(kind, niveau, pad, nog_niet)
             elif kind.tag == "tekst":
                 # In een circulaire staat de lopende tekst in een omhulsel zonder eigen
                 # tekst (`<tekst><al>…</al><lijst>…</lijst></tekst>`); de kinderen tellen.
-                self.container_inhoud(kind, niveau, pad)
+                self.container_inhoud(kind, niveau, pad, nog_niet)
+            elif kind.tag == "structuurtekst" and (el.get("status") or "").lower() == "nogniet":
+                # Het Besluit digitale overheid (BWBR0037987) geeft zijn nog niet geldende
+                # Hoofdstuk 5 geen artikel, alleen `<structuurtekst><al><redactie>Dit onderdeel
+                # is nog niet inwerking getreden</redactie></al></structuurtekst>`: brontekst,
+                # dus hij staat onder de kop (`[Red: …]`). Gemeten alleen hier: in de 125
+                # BWB-bronnen van de kennisbank komt `<structuurtekst>` nergens anders voor, en
+                # elders blijft het een onbekend blok.
+                for deel in kind:
+                    if deel.tag not in OVERSLAAN:
+                        self.inhoud(deel, basis="", prefix_noot="")
             elif kind.tag in OVERSLAAN:
                 continue
             elif kind.tag in ("al", "lijst", "table", "tussenkop"):
                 self.inhoud(kind, basis="", prefix_noot="")
             else:
                 self.u.markeer_onbekend(f"blok:{kind.tag}")
-                self.container_inhoud(kind, niveau, pad)
+                self.container_inhoud(kind, niveau, pad, nog_niet)
 
-    def circulairedivisie(self, el, niveau: int, pad: dict) -> None:
+    def circulairedivisie(self, el, niveau: int, pad: dict, nog_niet: bool = False) -> None:
         """Een genummerd onderdeel van een circulaire: een kop, maar geen artikel.
 
         NR/REG-1829 (BWBR0041321) deelt zich in tien `circulaire.divisie`s in met
@@ -415,9 +445,9 @@ class BwbOmzetter:
         if regel:
             self.u.blok(f"{'#' * min(niveau, 6)} {regel}")
         self.subtitel(el)
-        self.container_inhoud(el, niveau + 1, pad)
+        self.container_inhoud(el, niveau + 1, pad, nog_niet)
 
-    def artikel(self, el, niveau: int, pad: dict) -> None:
+    def artikel(self, el, niveau: int, pad: dict, nog_niet: bool = False) -> None:
         label, nr, titel, nr_eerst = self.kop(el)
         if not nr:
             # De Wet RO (BWBR0001830) schrijft twee koppen zonder `<nr>`:
@@ -440,6 +470,19 @@ class BwbOmzetter:
         self.u.eenheid(anker, "artikel", regel)
         self.subtitel(el)
         status = (el.get("status") or "").lower()
+        if nog_niet:
+            # Een artikel in een nog niet geldend hoofdstuk, afdeling of paragraaf geldt ook
+            # niet, en wordt geschreven zoals een nog niet geldend artikel, de leden als platte
+            # alinea zonder eenheid (besluit 12, kb WP-103). In de vier gemeten regelingen met
+            # zo'n artikel (Vreemdelingenwet 2000, Jeugdwet, Wet digitale overheid, Wft) draagt
+            # het zelf ook `status="nogniet"`; zonder die status geldt die van het element
+            # erboven, zoals in de poort en de bronlezing van de kennisbank. Vervallen in een
+            # onderdeel dat nog moet ingaan is niet gemeten en spreekt zichzelf tegen.
+            if status == "vervallen":
+                raise ConversionError(
+                    f"Vervallen artikel {nr} staat in een onderdeel dat nog niet geldt; "
+                    "omzetting geweigerd.")
+            status = "nogniet"
         inwerking = el.get("inwerking")
         if status == "vervallen":
             if not inwerking or not re.fullmatch(r"\d{4}-\d{2}-\d{2}", inwerking):
@@ -453,7 +496,7 @@ class BwbOmzetter:
             # De portal liet de tekst weg en zei dat dit onderdeel nog niet in
             # werking is. Wij houden de tekst (het anker moet blijven bestaan),
             # dus de melding moet er wel staan, in de vorm van `[Vervallen per …]`.
-            self.u.blok("[Nog niet in werking getreden.]")
+            self.u.blok(NOG_NIET_MELDING)
         teller = {"lijsten": 0}
         for kind in el:
             if kind.tag == "lid":
