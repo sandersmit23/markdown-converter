@@ -67,6 +67,11 @@ _PORTAL_ATTEMPTS = 6
 _FORMEX_MEDIA_TYPE = "application/zip;mtype=fmx4"
 _FORMEX_LANGUAGES = {"NL": "nld", "EN": "eng", "DE": "deu", "FR": "fra"}
 
+# De manifestatietypen (zoals de Cellar-metadata ze noemen) die de wetgevingsroute omzet:
+# Formex, en anders de (X)HTML. Een weigering zegt in welke daarvan het document wél bestaat.
+_TEKSTVORMEN = ("fmx4", "xhtml", "html")
+
+
 def _celex_url(celex: str) -> str:
     """De Cellar-resource van een CELEX, URL-gecodeerd.
 
@@ -77,7 +82,6 @@ def _celex_url(celex: str) -> str:
     codering de identiteit: cijfers, hoofdletters en het koppelteken van een consolidatiedatum.
     """
     return f"http://publications.europa.eu/resource/celex/{quote(celex, safe='')}"
-
 
 
 def extract_celex(text: str) -> str | None:
@@ -340,9 +344,9 @@ def _fetch_hof(ident: str, lang: str, *, requested_url: str):
     Er is bewust geen terugval op de Curia-HTML. Twee routes per bron betekent twee
     omzetters die allebei bewezen moeten worden, en de HTML van het Hof heeft in de
     kennisbank juist de blokkades opgeleverd die de Formex bij de bron oplost (het
-    dictum als lay-outtabel, de procestaalnoot zonder definitie). Een arrest van
-    een paar dagen oud heeft nog geen Formex; dan is de weigering de juiste
-    uitkomst en de reden staat erbij.
+    dictum als lay-outtabel, de procestaalnoot zonder definitie). Heeft de Cellar
+    geen Nederlandse Formex, dan is de weigering de juiste uitkomst, en de melding
+    zegt uit de Cellar-metadata in welke vorm en taal het document er wél is.
     """
     if ident.upper().startswith("ECLI:"):
         url = f"http://publications.europa.eu/resource/ecli/{quote(ident, safe='')}"
@@ -360,10 +364,16 @@ def _fetch_hof(ident: str, lang: str, *, requested_url: str):
     if response.status_code != 200 or not data.startswith(b"PK"):
         detail = (f"HTTP {response.status_code}" if response.status_code != 200
                   else "het antwoord is geen zip")
+        # Tot oktober 2026 stond hier "een arrest van de laatste dagen of weken staat er
+        # nog niet", bij elke 404. Russmedia (62023CJ0492, december 2025) en Inteligo Media
+        # (62023CJ0654, november 2025) hebben Formex in 22 of 23 talen en in het Nederlands
+        # alleen HTML; Advies 1/15 was alleen ongecodeerd gevraagd (kb K4 R1, G4 R2, G3 R2;
+        # M5). Wachten is dan geen advies; de metadata zeggen wat er is. "geen
+        # Formex-manifestatie" blijft letterlijk staan: de meetlat telt de weigering daarop.
         raise ConversionError(
             f"Voor {ident} is geen Formex-manifestatie in de Cellar ({detail}) in taal "
-            f"{lang}. Een arrest van de laatste dagen of weken staat er nog niet; "
-            "probeer het later opnieuw. Er is geen terugval op HTML."
+            f"{lang}. {_beschikbaar(ident, lang, ('fmx4',))} "
+            "Er is geen terugval op HTML of op een andere taal."
         )
     bron_url = getattr(response, "url", "") or url
     # Een oud arrest (Satamedia, 62007CJ0073, 2008) noemt in zijn Formex geen ECLI,
@@ -473,6 +483,79 @@ def _ecli_uit_cellar(celex: str) -> str | None:
         return None
     ecli = eclis.pop()
     return ecli if _ECLI_HOF.fullmatch(ecli) else None
+
+
+def _manifestaties(ident: str) -> dict[str, set[str]] | None:
+    """Per manifestatietype (`fmx4`, `xhtml`, `html`, `pdf`, …) de talen waarin de Cellar `ident` heeft.
+
+    `ident` is een CELEX of een EU-ECLI; de talen zijn de drieletterige codes van de metadata.
+    Leeg: de metadata kennen het document niet. None: niet na te gaan (storing, geen geldig
+    antwoord, of een id dat geen CELEX of ECLI is). Een ECLI hangt ook aan de samenvatting van
+    het arrest (`62023CJ0654_RES`, gemeten op 6 oktober 2026); alleen een werk met een gewone
+    CELEX telt, anders zou de Formex van de samenvatting voor die van het arrest doorgaan.
+    """
+    ident = ident.upper()
+    if _EU_ECLI_RE.fullmatch(ident):
+        eigenschap = "case-law_ecli"
+    elif _CELEX_RE.match(ident):
+        eigenschap = "resource_legal_id_celex"
+    else:
+        return None
+    query = (
+        "PREFIX cdm: <http://publications.europa.eu/ontology/cdm#>\n"
+        "SELECT DISTINCT ?celex ?lang ?type WHERE {\n"
+        f'  ?w cdm:{eigenschap} "{ident}"^^<http://www.w3.org/2001/XMLSchema#string> ;\n'
+        "     cdm:resource_legal_id_celex ?celex .\n"
+        "  ?e cdm:expression_belongs_to_work ?w ; cdm:expression_uses_language ?lang .\n"
+        "  ?m cdm:manifestation_manifests_expression ?e ; cdm:manifestation_type ?type .\n"
+        "}"
+    )
+    try:
+        r = net.documents().get(
+            _SPARQL_URL,
+            params={"query": query, "format": "application/sparql-results+json"},
+            timeout=_SPARQL_TIMEOUT,
+        )
+        if r.status_code != 200:
+            return None
+        rows = r.json()["results"]["bindings"]
+    except Exception:
+        return None
+    index: dict[str, set[str]] = {}
+    for row in rows:
+        celex = (row.get("celex", {}).get("value") or "").strip()
+        taal = (row.get("lang", {}).get("value") or "").rsplit("/", 1)[-1].upper()
+        soort = (row.get("type", {}).get("value") or "").strip()
+        if _CELEX_RE.match(celex) and taal and soort:
+            index.setdefault(soort, set()).add(taal)
+    return index
+
+
+def _beschikbaar(ident: str, lang: str, gezocht: tuple[str, ...]) -> str:
+    """Eén zin voor een weigering: in welke vorm en taal de Cellar `ident` wél heeft.
+
+    `gezocht` zijn de vormen die de route had kunnen omzetten. Bestaat er volgens de metadata
+    toch een in de gevraagde taal, dan zegt de zin dat ook: dan ligt de fout bij het verzoek,
+    zoals bij het ongecodeerde Advies 1/15 (kb WP-92, G3 R2).
+    """
+    code, taal = _EU_LANGUAGES.get(lang.upper(), (lang.upper(), lang.upper()))
+    index = _manifestaties(ident)
+    if index is None:
+        return "Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord)."
+    if not index:
+        return f"De Cellar-metadata kennen {ident} niet."
+    hier = sorted(soort for soort, talen in index.items() if code in talen)
+    wel = [soort for soort in gezocht if soort in hier]
+    if wel:
+        return (f"Volgens de Cellar-metadata bestaat {ident} in het {taal} wel als {_join_nl(wel)}; "
+                "het verzoek kreeg die toch niet.")
+    zin = (f"In het {taal} heeft de Cellar {ident} alleen als {_join_nl(hier)}" if hier
+           else f"In het {taal} heeft de Cellar {ident} (nog) niet")
+    elders = "; ".join(
+        f"{soort} is er {_language_list(index[soort])}" if index.get(soort) else f"{soort} is er in geen enkele taal"
+        for soort in gezocht
+    )
+    return f"{zin}; {elders}."
 
 
 def _html_herkomst(celex: str, lang: str, requested_url: str,
@@ -1138,9 +1221,34 @@ def _fetch_portal_html(celex: str, lang: str) -> str:
         code = r.status_code if r is not None else "?"
         raise ConversionError(
             f"Kon het document niet ophalen van EUR-Lex (status {code}) voor CELEX:{celex} "
-            f"in taal {lang}. Controleer het nummer/de taal, of download de Formex-XML en "
-            f"upload die via het andere tabblad."
+            f"in taal {lang}. {_beschikbaar(celex, lang, _TEKSTVORMEN)} Controleer het "
+            f"nummer/de taal, of download de Formex-XML en upload die via het andere tabblad."
         )
     html = net.decoded_text(r)
+    # Vóór `record_html`: een foutpagina hoort geen bronbewijs te worden.
+    foutmelding = _eurlex_foutpagina(html)
+    if foutmelding is not None:
+        raise ConversionError(
+            f"EUR-Lex gaf voor CELEX:{celex} in taal {lang} geen document maar een "
+            f"foutpagina (\"{foutmelding}\"). {_beschikbaar(celex, lang, _TEKSTVORMEN)}"
+        )
     record_html(html, source_url=getattr(r, "url", "") or url, identifier=celex, language=lang)
     return html
+
+
+def _eurlex_foutpagina(html: str) -> str | None:
+    """De melding van een EUR-Lex-foutpagina, of None als de pagina een document is.
+
+    Op 5 oktober 2026 gaf `TXT/HTML/?uri=CELEX:32004D0411` (en 32004L0048) HTTP 200 met de
+    portaalpagina in plaats van het document: `<title>EUR-Lex - CELEX:32004D0411 - EN</title>` en
+    een blok `#errorDocumentView` met "The requested document does not exist.". De route meldde
+    `ok`, de bundel bewaarde de pagina als bron, en pas de kennisbank weigerde, op de titel `×`
+    van de cookiebanner (kb WP-90, G1 R8/R9; M9). De Cellar heeft die twee in het Nederlands
+    alleen als pdf. Het blok is de vorm van de pagina, niet haar taal; de melding komt er
+    letterlijk uit. Een document van de HTML-route heeft dat blok niet: het is de kale tekst.
+    """
+    blok = BeautifulSoup(html, "lxml").find(id="errorDocumentView")
+    if blok is None:
+        return None
+    melding = blok.find(class_="alert") or blok
+    return collapse_ws(melding.get_text(" ")) or "zonder tekst"

@@ -321,8 +321,12 @@ def test_geen_formex_is_een_weigering_zonder_terugval_op_html(monkeypatch):
     with pytest.raises(ConversionError, match="Er is geen terugval op HTML") as fout:
         from_link("62099CJ0001")
     assert "HTTP 404" in str(fout.value)
-    # Precies één verzoek: er is niet stilletjes een tweede route geprobeerd.
-    assert len(calls) == 1
+    # Precies één documentverzoek: er is niet stilletjes een tweede route geprobeerd. Het
+    # tweede verzoek is de Cellar-metadata, voor de melding (kb WP-105; zie
+    # test_eurlex_ophaalmeldingen.py).
+    assert [url for url, _ in calls if "webapi/rdf/sparql" not in url] == [
+        "http://publications.europa.eu/resource/celex/62099CJ0001"]
+    assert len(calls) == 2
 
     _fake(monkeypatch, {"resource/celex/": (200, b"<HTML>een pagina</HTML>")})
     with pytest.raises(ConversionError, match="het antwoord is geen zip"):
