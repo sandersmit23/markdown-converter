@@ -3,6 +3,22 @@
 Nieuwste bovenaan. De inhoudelijke uitleg staat in `CLAUDE.md`; hier alleen wat er
 veranderde en waarom.
 
+## 6 oktober 2026 — de considerans-lijst en nog niet geldende structuur in de BWB-XML (kb WP-103)
+
+- **`<considerans.lijst>`** (`plat()`): de grondslagen onder `Gelet op:` kregen hun nummer niet, want
+  `li.nr` staat in `OVERSLAAN` en de aanhef werd kind voor kind plat geslagen. Het Besluit elektronisch
+  procederen (BWBR0044275) stond er zonder `a.`–`d.`; alleen de bronlezing van de kennisbank zag het (de
+  enige hoge converterklasse van haar grote test van oktober 2026). Nu een lijst `- a. …` zonder eenheid.
+- **`status="nogniet"` op een hoofdstuk, afdeling of paragraaf** (besluit 12 van de kennisbank): tot nu
+  toe een weigering van de hele regeling, ook om 3 van 221 artikelen. Nu de kop met eenheid, daaronder de
+  `<redactie>`-regel uit `<structuurtekst>` of `[Nog niet in werking getreden.]`, en de artikelen erin
+  zoals een nog niet geldend artikel. Andere elementen met `nogniet`, `<structuurtekst>` elders en een
+  vervallen artikel in zo'n onderdeel blijven een weigering.
+- Tests: de fixture `tests/fixtures/bwb/` (byte voor byte die van de kennisbank, die de vorm eerst met haar
+  eigen lezers las) en dertien gevallen, waarvan één de oude test "nogniet op een hoofdstuk weigert"
+  vervangt. 649 tests. Meetlat (alleen Formex): geen verschil. Opgehaald met `kb_fetch`: de zes
+  regelingen BWBR0044275, BWBR0037987, BWBR0011823, BWBR0048156, BWBR0034925 en BWBR0020368, alle `ok`.
+
 ## 29 september 2026 — de converter draait zonder de Mac van Sander (kb WP-55)
 
 Geen gedragswijziging in `mdconv/`; alleen wat rond de omzetting hangt.

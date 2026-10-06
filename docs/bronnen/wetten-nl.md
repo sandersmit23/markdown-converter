@@ -28,3 +28,14 @@ architectuur en verwijst hiernaartoe.
   er een definitie voor heeft**, anders een macht `^n^` (Archiefregeling: `kg/m<sup>3</sup>`); een
   ondertekening is één regel met de losse tekst ertussen; `<table><title>` en `<kop><subtitel>` worden
   een alinea boven de tabel en onder de kop, en een ander kind van `<table>` of `<kop>` weigert.
+  Sinds kb WP-103 (6 oktober 2026) twee vormen erbij. Een **`<considerans.lijst>`** (de grondslagen onder
+  `Gelet op:`) wordt een lijst zoals elke BWB-lijst, `- a. …`, zonder eenheid (de aanhef heeft geen artikel);
+  tot dan viel het nummer weg en stonden de vier grondslagen van het Besluit elektronisch procederen er
+  zonder `a.`–`d.`. En een **hoofdstuk, afdeling of paragraaf met `status="nogniet"`** weigert niet meer:
+  de kop houdt zijn eenheid, eronder staat de `<redactie>`-regel uit de `<structuurtekst>` van de bron
+  (`[Red: Dit onderdeel is nog niet inwerking getreden]`) of anders `[Nog niet in werking getreden.]`, en
+  de artikelen erin worden geschreven zoals een nog niet geldend artikel (melding onder de kop, leden als
+  platte alinea zonder eenheid), ook zonder eigen status. Op elk ander element blijft `nogniet` een
+  weigering, net als `<structuurtekst>` buiten zo'n element en een vervallen artikel erin. Gemeten op de
+  vijf regelingen die de kennisbank daardoor miste (Besluit digitale overheid, Vreemdelingenwet 2000, Wet
+  digitale overheid, Jeugdwet, Wft); de raw-vorm is de fixture `tests/fixtures/bwb/`.
