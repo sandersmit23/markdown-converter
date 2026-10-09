@@ -3,6 +3,33 @@
 Nieuwste bovenaan. De inhoudelijke uitleg staat in `CLAUDE.md`; hier alleen wat er
 veranderde en waarom.
 
+## 9 oktober 2026 — een blok in een Formex-alinea en een `LINK` vast aan een woord (kb WP-115)
+
+- **Een groep of definitielijst in een alinea** (`splits_blokken()`, `blok_in_alinea()`): een `GR.SEQ` in een `P`,
+  `TXT` of `ALINEA`, of een `DLIST` in een `TXT` of in de eerste `P` van een onderdeel zonder `NP`, buiten een citaat.
+  De alinea breekt bij het blok: de tekst ervóór met nummer en eenheid zoals altijd, het blok als tekstblokken zonder
+  eenheid (titel `TI` en `STI`, een `P`, een afbeelding vastgelegd; een definitie als `TERM DEFINITION`), de rest als
+  alinea eronder. Tot nu toe `inline:GR.SEQ` en `inline:DLIST`: drie handelingen in twee bevestigingstests van de
+  kennisbank (T9-F5, T10-F3; besluit 12 van haar plan 7). Wat het besluit niet dekt, weigert met
+  `blok-in-alinea:<tag>`: een genummerde titel, een ander kind dan titel, `P` of afbeelding, een definitie met een
+  opsomming, een tekst of lid dat met het blok begint, en een punt met `PREFIX` (de planner van de kennisbank nummert
+  zo'n regel; een open vraag daar). Een `DLIST` in een alinea die `inhoud()` al splitste, houdt haar ankers.
+- **Een `LINK` vast aan een woord** (`AANEEN_IN_BRON`, `let_op_aaneen()`, `meld_aaneen()`): de woordcontrole leest
+  `Rechnungshof<LINK>https://…</LINK>` nu als één woord, zoals de omzetter het schreef en de kennisbank het leest, en de
+  omzetter meldt het in een eigen waarschuwing. Tot nu toe "Formex-tekstbehoud faalt" (32025D0317, T10-F5).
+- Tests: de fixture `tests/fixtures/formex/blok-in-alinea.{xml,md}` (byte voor byte die van de kennisbank; de eenheden
+  zijn precies de ankers van haar planner, twee TIFF's in `afbeeldingen_weggelaten`), zes contexten die eerst
+  weigerden, negen weigeringen met eigen melding, het negatief (omhulsel en citaat) en twee meldingen. 708 tests (21
+  nieuw, waarvan 18 op de oude code falen; de drie andere bewaken wat ongewijzigd blijft: het negatief, een
+  definitielijst in een alinea die `inhoud()` al splitste, en de oude weigering van een blok in een definitie). Meetlat (alleen
+  Formex): geen verschil. Converterregressie over de 162 Formex-bronnen van de kennisbank: Markdown, eenheden,
+  afbeeldingen en waarschuwingen gelijk, en over de 307 zips van de meetlat ook. Opgehaald met `kb_fetch`: van de negen
+  goedgekeurde kandidaten weigerden er vóór de wijziging drie op hun vorm (`inline:GR.SEQ`: 32017D1494, 32017D2112,
+  32024R2455) en zes niet (vier `ok`, een op `FORMULA`, een op geschrapte elementen). Erna weigeren alle drie
+  verderop, op iets dat niet in deze wijziging zit: 32017D1494 op een afbeelding met tekst (`IMG.CNT`) midden in een
+  zin, 32017D2112 op een tabel in de groep (`blok-in-alinea:TBL`) en 32024R2455 op een geciteerde tabel op een plek
+  waar alleen tekst kan staan. Voor de definitielijst en de `LINK` is de fixture het bewijs.
+
 ## 9 oktober 2026 — `<deze>`, `<dossierref>` en `<plaatje>` in lijst en blok in de BWB-XML (kb WP-114)
 
 - **`<deze>` en `<dossierref>`** (`inline_el()`): gewone tekst, zoals `<functie>` en `<extref>`. Een

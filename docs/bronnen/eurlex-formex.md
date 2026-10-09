@@ -128,7 +128,7 @@ architectuur en verwijst hiernaartoe.
   per punt en geen eenheid: de kennisbank zou dat lezen als structuur van déze handeling. De kop
   van een geciteerde afdeling verliest haar opmaak (`kop_tekst`). PREFIX, TERM en DEFINITION, en
   losse NP's die in de bron tegen elkaar aan staan (`cyberbeveiliging3.2.`), krijgen een spatie
-  ertussen. Buiten een citaat blijven deze elementen een weigering (`citaatdiepte`). Een
+  ertussen. Buiten een citaat zie hieronder (een blok in een alinea). Een
   **geciteerde tabel** kan niet inline. `geciteerde_tabel()` bouwt haar op waar ze staat, zodat
   haar noten in documentvolgorde genummerd worden, en laat een `TABELMARKER` (U+0000) in de tekst
   achter. `schrijf()` in `inhoud()` breekt de alinea daar: de tekst ervoor, de tabel als blok, de
@@ -140,6 +140,27 @@ architectuur en verwijst hiernaartoe.
   (`annex-o1-art-3`, patronen.md §6). Tot 23 september 2026 weigerde de meetlat op deze vormen 31
   documenten (inline:DIVISION, inline:DLIST, inline:GR.SEQ, inline:TBL, inhoud:ARTICLE); 25 komen
   nu door, de overige 6 op een andere oorzaak.
+  **Een blok in een alinea** (kb WP-115, besluit 12 van haar plan 7, 9 oktober 2026): een groep
+  (`GR.SEQ`) in een `P`, `TXT` of `ALINEA`, of een definitielijst (`DLIST`) in een `TXT` of in de
+  eerste `P` van een onderdeel zonder `NP`, buiten een citaat. Tot dan weigerde de omzetter
+  (`inline:GR.SEQ`, `inline:DLIST`): een figuur in een overweging van 32017D1436 (`Figuur 1`, een
+  opschrift en een TIFF), een groep in 32022R1529, een definitielijst in 02021R0404-20250609. Nu
+  breekt de alinea bij het blok (`splits_blokken()`): de tekst ervóór is de alinea zoals altijd
+  (met nummer en eenheid van de overweging, het punt, het onderdeel of het lid), het blok wordt
+  tekstblokken zonder eenheid (`blok_in_alinea()`), en de rest van de alinea een alinea eronder.
+  Van een groep komen `TI` en `STI` van de titel elk als alinea, een `P` als alinea en een
+  afbeelding zoals een los blok (vastgelegd, niet overgenomen); van een definitielijst elk punt
+  als `TERM DEFINITION`, zoals de kopregel van een definitiepunt. Een `DLIST` in een `P` of
+  `ALINEA` die `inhoud()` al in blokken splitst, houdt haar definitiepunten met anker (de 79
+  omhulsels in de bewaarde bronnen van de kennisbank, artikel 4 AVG). Blijft een weigering, met de
+  melding `blok-in-alinea:<tag>`: een genummerde groepstitel (`NP`), een ander kind dan titel, `P`
+  of afbeelding (`LIST`, `TBL`, `NO.GR.SEQ`, een geneste groep), een `P` in de groep met zo'n kind,
+  een definitie met een opsomming of tabel, een `TXT` of eerste `P` die met het blok begint, een lid
+  dat met het blok begint, en een punt met `PREFIX`. Dat laatste is een open vraag van de
+  kennisbank: haar planner nummert een regel `i) …` onder een onderdeel (`art-2-1-b-i`), terwijl
+  het besluit "zonder anker" zegt. Een blok in een definitie, cel, noot of kop blijft
+  `inline:GR.SEQ` of `inline:DLIST`. De fixture `tests/fixtures/formex/blok-in-alinea.{xml,md}` is
+  byte voor byte die van de kennisbank.
   Een **annotatie** (`GR.ANNOTATION`/`ANNOTATION`) is in Formex de noot die geen voetnoot is: een
   NB, een opmerking, een technische noot, een legenda. Ze komt als gewone alinea's op de plek waar
   de bron haar zet. De titel (`Noot 1`, `Technische noot:`) wordt een eigen alinea, zoals de
@@ -281,6 +302,11 @@ architectuur en verwijst hiernaartoe.
   en `meld_aaneen()` zetten elk zo'n woord (`'2016betreffende'`) als waarschuwing in de herkomst,
   zoals bij de dubbele `d)` in de AVG. Staat er in de bron wél een spatie, dan staat die in
   `.tail` en telt ze gewoon mee.
+  Zo ook een **link** (`LINK`, sinds 2026 de ELI achter elke `REF.DOC.OJ` in een noot) die de bron
+  zonder witruimte achter een woord zet (`Rechnungshof<LINK>https://…</LINK>`, 32025D0317, kb
+  WP-115, T10-F5): de omzetter schreef haar al aaneen, maar de woordcontrole zette er een grens
+  en weigerde. Nu staat `LINK` in `AANEEN_IN_BRON`, en meldt `meld_aaneen()` zo'n link in een
+  eigen waarschuwing (`'Rechnungshofhttps'`); die over een datum of getal blijft zoals ze was.
   **Een nootverwijzing die de tekst van haar noot herhaalt** (`NOTE NOTE.REF=…` mét inhoud: MiFIR
   600/2014 artikel 53, punt 3, de geconsolideerde MiFIR, 2011/83) krijgt geen tweede definitie: de
   druk zet de noot één keer, met twee verwijzingen, en zo doet de omzetter het al. Op besluit van
