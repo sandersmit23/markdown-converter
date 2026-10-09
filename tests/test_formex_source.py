@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import base64
 import io
+from pathlib import Path
+import re
 from types import SimpleNamespace
 import zipfile
 
@@ -2527,3 +2529,198 @@ def test_een_vervangen_bereik_verandert_niets_aan_de_uitvoer():
     zonder = formex_xml.omzetten(formex_zip(act=_cons_act()))[0]
     met = formex_xml.omzetten(formex_zip(act=_cons_act(markeringen=("32025R0037", "32025R0038"))))[0]
     assert met == zonder
+
+
+# ------------------------------------------------------------------ een blok in een alinea
+# Besluit 12 van plan 7 van de kennisbank (kb WP-115, 9 oktober 2026): een groep (`GR.SEQ`)
+# of definitielijst (`DLIST`) die buiten een citaat in een alinea staat, wordt tekstblokken
+# zonder eenheid onder de alinea, en de rest van de alinea een alinea eronder. Tot dan
+# weigerde de omzetter (`inline:GR.SEQ`, `inline:DLIST`): een figuur in een overweging van
+# 32017D1436, een groep in 32022R1529, een definitielijst in 02021R0404-20250609. Een `LINK`
+# die de bron aan een woord vastschrijft, neemt hij over en meldt hij (32025D0317, T10-F5).
+
+FIXTURE_FORMEX = Path(__file__).parent / "fixtures" / "formex"
+BLOK_ONDERDEEL = "L_202609115NL.000101.fmx.xml"
+BLOK_MANIFEST = (b'<?xml version="1.0" encoding="UTF-8"?><DOC><BIB.DOC><NO.DOC FORMAT="YN" TYPE="OJ"><YEAR>2026</YEAR>'
+                 b'<NO.CURRENT>9115</NO.CURRENT></NO.DOC></BIB.DOC><FMX><DOC.MAIN.PUB NO.SEQ="0001"><LG.DOC>NL</LG.DOC>'
+                 b'<REF.PHYS FILE="L_202609115NL.000101.fmx.xml" TYPE="DOC.XML"/></DOC.MAIN.PUB></FMX></DOC>')
+
+
+def _blok_zip(xml: bytes) -> bytes:
+    """De kb-fixture als Cellar-zip: manifest, onderdeel en de TIFF's die het onderdeel declareert."""
+    stream = io.BytesIO()
+    with zipfile.ZipFile(stream, "w") as archive:
+        archive.writestr("L_202609115NL.doc.fmx.xml", BLOK_MANIFEST)
+        archive.writestr(BLOK_ONDERDEEL, xml)
+        for naam in sorted(set(re.findall(rb'FILEREF="([^"]+\.tif)"', xml))):
+            archive.writestr(naam.decode(), b"")
+    return stream.getvalue()
+
+
+def _blok_fixture() -> bytes:
+    return (FIXTURE_FORMEX / "blok-in-alinea.xml").read_bytes()
+
+
+def _blok(oud: bytes, nieuw: bytes, xml: bytes | None = None) -> bytes:
+    xml = _blok_fixture() if xml is None else xml
+    assert oud in xml
+    return xml.replace(oud, nieuw, 1)
+
+
+def test_een_blok_in_een_alinea_schrijft_de_kb_fixture_byte_voor_byte():
+    """kb `md-clean-core/tests/fixtures/formex-blok-in-alinea/`: elke context van de weigeringen."""
+    markdown, eenheden, onbekend, extra = formex_xml.omzetten(_blok_zip(_blok_fixture()))
+    assert markdown == (FIXTURE_FORMEX / "blok-in-alinea.md").read_text(encoding="utf-8")
+    assert onbekend == {}
+    # Precies de ankers die de planner van de kennisbank zet; geen eenheid op een regel van een blok.
+    assert [e.anker for e in eenheden if e.anker] == [
+        "rec-1", "rec-2", "rec-3", "art-1", "art-1-1", "art-1-2", "art-2", "art-2-1", "art-2-1-a", "art-2-1-b",
+        "art-2-1-c", "art-2-1-c-i", "art-2-1-c-ii", "art-2-2", "art-3", "art-4", "annex-1", "annex-1-1", "annex-1-2"]
+    assert [b["fileref"] for b in extra["metadata"]["afbeeldingen_weggelaten"]] == [
+        "L_202609115NL.000101.fig1.tif", "L_202609115NL.000101.fig2.tif"]
+    assert ("De Formex-bron schrijft 1 keer een link (LINK) aaneen met het woord ervoor of erna ('Rekenkamerhttps'); "
+            "de omzetter neemt dat ongewijzigd over.") in extra["metadata"]["waarschuwingen"]
+
+
+def _alleen(*houd: str) -> bytes:
+    """De fixture met alleen de genoemde contexten; de andere blokken weg (hun staart blijft)."""
+    xml = _blok_fixture()
+    contexten = {
+        "figuur-overweging": (b'<GR.SEQ><TITLE><TI><P>Figuur 1</P></TI>', b'</GR.SEQ>De meetmast'),
+        "groep-txt": (b'<GR.SEQ><TITLE><TI><P>Tabel 1', b'</GR.SEQ>De Commissie'),
+        "groep-lid": (b'<GR.SEQ><TITLE><TI><P>Overzicht van de deelnemers', b'</GR.SEQ>De lijst'),
+        "dlist-txt": (b'<DLIST><DLIST.ITEM><TERM><QUOT.START CODE="201C" ID="QS0001"', b'</DLIST>tenzij'),
+        "dlist-item": (b'<DLIST><DLIST.ITEM><TERM><QUOT.START CODE="201C" ID="QS0007"', b'</DLIST>per kwartaal'),
+        "groep-bijlage": (b'<GR.SEQ><TITLE><TI><P>Figuur 2', b'</GR.SEQ>De kaart'),
+    }
+    for naam, (begin, eind) in contexten.items():
+        if naam in houd:
+            continue
+        i = xml.index(begin)
+        j = xml.index(eind, i) + len(b"</GR.SEQ>" if eind.startswith(b"</GR.SEQ>") else b"</DLIST>")
+        xml = xml[:i] + b" " + xml[j:]
+    return xml
+
+
+@pytest.mark.parametrize("context", ["figuur-overweging", "groep-txt", "groep-lid", "dlist-txt", "dlist-item",
+                                     "groep-bijlage"])
+def test_elke_context_van_de_oude_weigering_schrijft_nu_de_nieuwe_vorm(context):
+    """Elke context weigerde tot kb WP-115 (`inline:GR.SEQ` of `inline:DLIST`); nu door, zonder eenheid op het blok."""
+    markdown, eenheden, onbekend, _ = formex_xml.omzetten(_blok_zip(_alleen(context)))
+    assert onbekend == {}
+    verwacht = {
+        "figuur-overweging": "De opbouw staat in figuur 1:\n\nFiguur 1\n\nOpbouw van de meetcentrale\n\n"
+                             "De meetmast staat twaalf kilometer uit de kust.",
+        "groep-txt": "(3) De proef duurt drie jaar, in de fasen van tabel 1:\n\nTabel 1\n\nFase 1: de bouw van de mast."
+                     "\n\nFase 2: de meting.\n\nDe Commissie volgt elke fase.",
+        "groep-lid": f"1.{NBSP * 3}Dit besluit regelt de proef met de deelnemers die hieronder staan:\n\nOverzicht van "
+                     "de deelnemers\n\nDeelnemer A, gevestigd te Brugge.\n\nDeelnemer B, gevestigd te Gent.\n\n"
+                     "De lijst wordt elk jaar bijgewerkt.",
+        "dlist-txt": "a) hij drukt de meetwaarden uit in de eenheden\n\n“kilowatt” voor het vermogen,\n\n"
+                     "“meter per seconde” voor de windsnelheid,\n\ntenzij de bevoegde autoriteit anders bepaalt;",
+        "dlist-item": "— de waarden in de eenheden\n\n“megawattuur” voor de opbrengst,\n\nper kwartaal;",
+        "groep-bijlage": "De ligging staat in figuur 2.\n\nFiguur 2\n\nLigging van de meetmast\n\n"
+                         "Bron: zeekaart van 2025.\n\nDe kaart is indicatief.",
+    }[context]
+    assert verwacht in markdown
+    assert [e.anker for e in eenheden if e.anker] == [
+        "rec-1", "rec-2", "rec-3", "art-1", "art-1-1", "art-1-2", "art-2", "art-2-1", "art-2-1-a", "art-2-1-b",
+        "art-2-1-c", "art-2-1-c-i", "art-2-1-c-ii", "art-2-2", "art-3", "art-4", "annex-1", "annex-1-1", "annex-1-2"]
+
+
+def _zonder_nieuwe_vorm() -> bytes:
+    """De fixture zonder een van de nieuwe vormen: geen blok in een alinea, en een spatie vóór de vaste LINK.
+
+    Wat daarop slaagt, slaagt ook op de omzetter van vóór kb WP-115: dat is het bewijs dat het negatief
+    ongewijzigd is (en de converterregressie over de bewaarde bronnen van de kennisbank, byte voor byte)."""
+    return _blok(b"door de Rekenkamer<LINK", b"door de Rekenkamer <LINK", _alleen())
+
+
+def test_zonder_de_contexten_is_de_uitvoer_die_van_een_alinea_zonder_blok():
+    """Het negatief van de fixture (de omhulsel-P van onderdeel c, het citaat van artikel 3): zoals vóór kb WP-115."""
+    markdown, eenheden, onbekend, _ = formex_xml.omzetten(_blok_zip(_zonder_nieuwe_vorm()))
+    assert onbekend == {}
+    assert ("c) hij bewaart de gegevens volgens de begrippen:\n\ni) “ruwe gegevens” de waarden zoals de mast ze meet;"
+            "\n\nii) “bewerkte gegevens” de gecontroleerde waarden.") in markdown
+    assert "wordt vervangen door: “Register Het register vermeldt a) de naam van de exploitant, en b) het adres" in markdown
+    assert "art-2-1-c-i" in [e.anker for e in eenheden]
+
+
+def test_een_definitielijst_in_een_alinea_met_eigen_tekst_houdt_haar_definitiepunten():
+    """Een `DLIST` in een `P` of `ALINEA` die de omzetter al in blokken splitste, werkt zoals vóór kb WP-115: met
+    anker. Zo staan 79 omhulsels in de bewaarde bronnen en artikel 4 van de AVG; de eigen tekst ernaast verandert dat niet."""
+    xml = _blok(b"<ALINEA>Dit besluit is gericht tot het Koninkrijk Belgi\xc3\xab.</ALINEA>",
+                b"<ALINEA>In dit artikel wordt verstaan onder:<DLIST><DLIST.ITEM><PREFIX>1)</PREFIX><TERM>exploitant"
+                b"</TERM><DEFINITION>wie de centrale beheert.</DEFINITION></DLIST.ITEM></DLIST>Dit besluit is gericht "
+                b"tot het Koninkrijk Belgi\xc3\xab.</ALINEA>", _zonder_nieuwe_vorm())
+    markdown, eenheden, onbekend, _ = formex_xml.omzetten(_blok_zip(xml))
+    assert onbekend == {}
+    assert "In dit artikel wordt verstaan onder:\n\n1) exploitant wie de centrale beheert." in markdown
+    assert "art-4-1" in [e.anker for e in eenheden]
+
+
+@pytest.mark.parametrize("oud, nieuw, melding", [
+    # Een groep met een opsomming: een eenheid zou stil in tekst opgaan.
+    (b"<P>Deelnemer B, gevestigd te Gent.</P>", b'<LIST TYPE="alpha"><ITEM><NP><NO.P>a)</NO.P><TXT>Deelnemer B.</TXT>'
+     b"</NP></ITEM></LIST>", "blok-in-alinea:LIST"),
+    # Een P in de groep met een tabel.
+    (b"<P>Deelnemer B, gevestigd te Gent.</P>", b'<P><TBL COLS="1"><CORPUS><ROW><CELL COL="1">Deelnemer B</CELL></ROW>'
+     b"</CORPUS></TBL></P>", "blok-in-alinea:TBL"),
+    # Een genummerde groepstitel is in een bijlage een onderdeel met anker.
+    (b"<TI><P>Overzicht van de deelnemers</P></TI>", b"<TI><NP><NO.P>A.</NO.P><TXT>Overzicht van de deelnemers</TXT>"
+     b"</NP></TI>", "blok-in-alinea:NP"),
+    # Een nummer van de groep zelf.
+    (b"<GR.SEQ><TITLE><TI><P>Overzicht van de deelnemers</P></TI></TITLE>",
+     b"<GR.SEQ><NO.GR.SEQ>1.</NO.GR.SEQ><TITLE><TI><P>Overzicht van de deelnemers</P></TI></TITLE>",
+     "blok-in-alinea:NO.GR.SEQ"),
+    # De stopvraag van kb WP-115: de planner nummert een punt met PREFIX in een blok.
+    (b'<DLIST><DLIST.ITEM><TERM><QUOT.START CODE="201C" ID="QS0001"',
+     b'<DLIST><DLIST.ITEM><PREFIX>i)</PREFIX><TERM><QUOT.START CODE="201C" ID="QS0001"', "blok-in-alinea:PREFIX"),
+    # Een definitie met een opsomming.
+    (b"<DEFINITION>voor het vermogen,</DEFINITION>", b'<DEFINITION>voor het vermogen:<LIST TYPE="DASH"><ITEM><P>piek'
+     b"</P></ITEM></LIST></DEFINITION>", "blok-in-alinea:DEFINITION"),
+    # Een TXT die met het blok begint: waar nummer en eenheid van het punt horen, is niet gemeten.
+    (b"<TXT>hij drukt de meetwaarden uit in de eenheden<DLIST>", b"<TXT><DLIST>", "blok-in-alinea:TXT"),
+    # Een omhulsel-P als eerste P van een streepjesitem (weigerde al; besluit 12 zegt niet welk anker).
+    (b"<ITEM><P>de waarden in de eenheden<DLIST>", b"<ITEM><P><DLIST>", "blok-in-alinea:P"),
+    # Een lid dat met de groep begint.
+    (b"<ALINEA>Dit besluit regelt de proef met de deelnemers die hieronder staan:<GR.SEQ>", b"<ALINEA><GR.SEQ>",
+     "blok-in-alinea:ALINEA"),
+])
+def test_een_blok_dat_besluit_12_niet_dekt_blijft_een_weigering_met_eigen_melding(oud, nieuw, melding):
+    with pytest.raises(ConversionError, match=re.escape(melding)):
+        formex_xml.omzetten(_blok_zip(_blok(oud, nieuw)))
+
+
+def test_een_blok_in_een_definitie_of_noot_blijft_de_oude_weigering():
+    """Alleen een alinea, een TXT en de eerste P van een opsomming breken bij een blok."""
+    xml = _blok(b"<DEFINITION>voor het vermogen,</DEFINITION>",
+                b"<DEFINITION>voor het vermogen,<GR.SEQ><TITLE><TI><P>Tabel</P></TI></TITLE><P>x</P></GR.SEQ></DEFINITION>")
+    with pytest.raises(ConversionError, match=re.escape("inline:GR.SEQ")):
+        formex_xml.omzetten(_blok_zip(xml))
+
+
+def test_een_link_vast_aan_een_woord_wordt_overgenomen_en_gemeld():
+    """32025D0317 (T10-F5): de bron schrijft de URI zonder witruimte achter een woord; de woordcontrole weigerde."""
+    xml = _alleen()
+    markdown, _, onbekend, extra = formex_xml.omzetten(_blok_zip(xml))
+    assert onbekend == {}
+    assert "gepubliceerd door de Rekenkamerhttps://www.rekenkamer.example/verslag-2025." in markdown
+    # De ELI-noot in de gewone vorm (`ELI: <LINK>`) verandert niet, en geeft geen melding.
+    assert "ELI: http://data.europa.eu/eli/dec/2025/1/oj)." in markdown
+    meldingen = [w for w in extra["metadata"]["waarschuwingen"] if "aaneen" in w]
+    assert meldingen == ["De Formex-bron schrijft 1 keer een link (LINK) aaneen met het woord ervoor of erna "
+                         "('Rekenkamerhttps'); de omzetter neemt dat ongewijzigd over."]
+
+
+def test_een_datum_en_een_link_aaneen_geven_elk_hun_eigen_melding():
+    """De melding over een datum of getal blijft woord voor woord die van vóór kb WP-115."""
+    xml = _blok(b"De proef begint op <DATE ISO=\"20270101\">1 januari 2027</DATE>.",
+                b"De proef begint op <DATE ISO=\"20270101\">1 januari 2027</DATE>na de bouw.", _alleen())
+    _, _, _, extra = formex_xml.omzetten(_blok_zip(xml))
+    meldingen = [w for w in extra["metadata"]["waarschuwingen"] if "aaneen" in w]
+    assert meldingen == [
+        "De Formex-bron schrijft 1 keer een datum of getal aaneen met het woord ervoor of erna ('2027na'); "
+        "de omzetter neemt dat ongewijzigd over.",
+        "De Formex-bron schrijft 1 keer een link (LINK) aaneen met het woord ervoor of erna ('Rekenkamerhttps'); "
+        "de omzetter neemt dat ongewijzigd over."]

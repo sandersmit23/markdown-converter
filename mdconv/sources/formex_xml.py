@@ -140,8 +140,20 @@ FORMULE_ELEMENTEN = {"FORMULA", "FORMULA.S"}
 # documenten, 23 september 2026). Een ander type blijft een weigering.
 AFBEELDINGSTYPE = "TIFF"
 # Inline elementen die geen woordgrens zijn: wat de bron eraan vastschrijft, is
-# één woord (zie `_plat_bron`).
-AANEEN_IN_BRON = {"HT", "DATE", "FT"}
+# één woord (zie `_plat_bron`). `LINK` sinds kb WP-115 (T10-F5): de omzetter
+# schreef `Rechnungshof<LINK>https://…</LINK>` al aaneen, en de lezers van de
+# kennisbank lezen de bron zo, maar deze woordcontrole zette er een grens en
+# weigerde 32025D0317 (`ontbreekt=['https', 'rechnungshof'], extra=['rechnungshofhttps']`).
+AANEEN_IN_BRON = {"HT", "DATE", "FT", "LINK"}
+# Een blok dat in een alinea staat, buiten een citaat (besluit 12 van kb plan 7,
+# WP-115): een groep (`GR.SEQ`, een figuur of tabel met titel) of een
+# definitielijst. `blok_in_alinea()` schrijft het als tekstblokken zonder eenheid.
+BLOK_IN_ALINEA = ("GR.SEQ", "DLIST")
+# Wat een `P` in zo'n groep niet mag dragen: dat zou een eenheid of een tabel zijn
+# die stil in tekst opgaat. Niet gemeten, dus een weigering. Een afbeelding in een
+# `P` (`<P><INCL.ELEMENT TYPE="TIFF"/></P>`) leest `inline()` al zoals in elke alinea.
+GEEN_BLOKTEKST = {"LIST", "DLIST", "TBL", "GR.TBL", "GR.SEQ", "NP", "ALINEA", "P",
+                  "GR.ANNOTATION", "ANNOTATION"}
 # De aanhalingstekens om een geciteerde inclusie, naar hun `CODE` (het Unicode-
 # codepunt). Gemeten om de inclusies in de meetlat: 201E en 201C openen, 201D
 # sluit. Een andere code is een weigering: een verkeerd teken is een andere tekst.
@@ -715,6 +727,7 @@ class FormexOmzetter:
         self.nootlabels: dict[str, int] = {}
         self.nootinhoud: dict[str, list[str]] = {}  # nootsleutel -> woorden van de definitie
         self.aaneen: dict[int, str] = {}            # id(element) -> aaneengeschreven woord
+        self.link_aaneen: dict[int, str] = {}       # id(LINK) -> aaneengeschreven woord (eigen melding)
         self.noot_erna: dict[int, str] = {}         # id(NOTE) -> woord dat de bron eraan vastschrijft
         self.vast_na_noot: dict[int, str] = {}      # id(NOTE) -> gescheiden woord (voor de melding)
         self.herhaalde_cellen = 0
@@ -859,8 +872,12 @@ class FormexOmzetter:
             # keer) of een bijlageonderdeel (32023L2673, 32025R0038). Net als een
             # geciteerd artikel (32026R1744) loopt dat inline door: een `##`-kop
             # of een eigen alinea per punt las de kennisbank als structuur van
-            # déze handeling. Buiten een citaat blijft het een weigering, want
-            # daar zou een eenheid van de handeling zelf stil in een alinea opgaan.
+            # déze handeling. Buiten een citaat komt een groep of definitielijst
+            # hier niet: een alinea, een `TXT` en de eerste `P` van een opsomming
+            # breken eerst bij het blok (`splits_blokken`, kb WP-115). Wat hier
+            # toch aankomt (een blok in een definitie, een cel, een noot of een kop)
+            # blijft een weigering, want daar zou een eenheid van de handeling zelf
+            # stil in een alinea opgaan.
             return " " + self.inline(el) + " "
         if self.citaatdiepte and tag == "TITLE":
             # De kop van zo'n geciteerde afdeling. Opmaak in een kop is
@@ -1001,7 +1018,7 @@ class FormexOmzetter:
                             "plek waar de omzetter geen alinea ————— kan schrijven; dat is niet gemeten")
         if self.afbeeldingen_weggelaten:
             self.meld_afbeeldingen()
-        if self.aaneen:
+        if self.aaneen or self.link_aaneen:
             self.meld_aaneen()
         if self.vast_na_noot:
             self.meld_vast_na_noot()
@@ -1429,7 +1446,13 @@ class FormexOmzetter:
         doel = np if np is not None else el
         nr = ws(self.inline(doel.find("NO.P"))) if doel.find("NO.P") is not None else ""
         txt_el = doel.find("TXT")
-        txt = ws(self.inline(txt_el)) if txt_el is not None else ws(self.inline(doel))
+        # Een groep of definitielijst in de tekst van de overweging (kb WP-115): het
+        # nummer en de tekst ervóór zijn de overweging, het blok en de rest volgen.
+        delen = self.splits_blokken(txt_el) if txt_el is not None else None
+        if delen is not None:
+            txt = self.tekst_voor_blok(delen[0], txt_el)
+        else:
+            txt = ws(self.inline(txt_el)) if txt_el is not None else ws(self.inline(doel))
         regel = f"{nr} {txt}".strip()
         self.u.blok(regel)
         if nr:
@@ -1443,6 +1466,8 @@ class FormexOmzetter:
             # anker (het profiel herkent een overweging aan haar nummer).
             self.u.eenheid("", "overweging", regel)
             return
+        if delen is not None:
+            self.schrijf_blokken(delen[1])
         for vervolg in doel:
             if vervolg.tag not in ("NO.P", "TXT"):
                 self.inhoud(vervolg, basis="", teller={"lijsten": 0})
@@ -1714,7 +1739,7 @@ class FormexOmzetter:
         tag = el.tag
         blokken = ("LIST", "TBL", "GR.TBL", "P", "NP", "DLIST", GESCHRAPT) + ANNOTATIES
         if tag == "ALINEA":
-            if not any(c.tag in blokken for c in el):
+            if not any(c.tag in blokken or c.tag == "GR.SEQ" for c in el):
                 schrijf(ws(self.inline(el)))
                 return
             tekst = el.text or ""
@@ -1723,6 +1748,18 @@ class FormexOmzetter:
                     schrijf(ws(tekst))
                     tekst = ""
                     self.inhoud(kind, basis, teller, prefix, lid_anker, geankerd)
+                    tekst = kind.tail or ""
+                elif kind.tag == "GR.SEQ":
+                    # Een groep in de alinea (besluit 12 van kb plan 7, WP-115: een figuur
+                    # in een overweging van 32017D1436, een groep in 32022R1529): de tekst
+                    # ervóór is de alinea, de groep tekstblokken zonder eenheid, de rest een
+                    # alinea eronder. Tot WP-115 ging de groep door `inline_el` en weigerde.
+                    # Begint een lid met de groep, dan is niet gemeten waar het lidnummer en
+                    # zijn eenheid horen; dat blijft een weigering.
+                    if isinstance(prefix, list) and prefix[0] and not ws(tekst):
+                        self.u.markeer_onbekend(f"blok-in-alinea:{tag}")
+                    schrijf(ws(tekst))
+                    self.blok_in_alinea(kind)
                     tekst = kind.tail or ""
                 else:
                     tekst += self.inline_el(kind) + (kind.tail or "")
@@ -1739,11 +1776,13 @@ class FormexOmzetter:
                 # dan de alinea; met tekst ernaast blijft het een weigering.
                 self.inhoud(el[0], basis, teller, prefix, lid_anker, geankerd)
             elif (el.find("LIST") is not None or el.find("TBL") is not None or el.find("DLIST") is not None
-                  or el.find(GESCHRAPT) is not None or any(c.tag in ANNOTATIES for c in el)):
+                  or el.find(GESCHRAPT) is not None or any(c.tag in ANNOTATIES for c in el)
+                  or el.find("GR.SEQ") is not None):
                 # Een P die een annotatie draagt, is in de bron een omhulsel: 57 van
                 # de 58 annotaties in een P zijn er het enige kind (de opmerkingen in
                 # de milieukeurcriteria 32005D0338 en in 32024D2627), de 58e staat
-                # naast een afbeelding (32005L0066).
+                # naast een afbeelding (32005L0066). Een P met een groep (kb WP-115)
+                # breekt als een ALINEA bij de groep; zie daar.
                 kopie = ET.Element("ALINEA")
                 kopie.text = el.text
                 kopie.extend(list(el))
@@ -1754,7 +1793,14 @@ class FormexOmzetter:
             # Een los genummerd punt (bijlagen) draagt in het Publicatieblad
             # dezelfde vorm als een lid: nummer plus drie harde spaties.
             nr = ws(self.inline(el.find("NO.P"))) if el.find("NO.P") is not None else ""
-            txt = ws(self.inline(el.find("TXT"))) if el.find("TXT") is not None else ""
+            txt_el = el.find("TXT")
+            # Een groep of definitielijst in de tekst van het punt (kb WP-115): nummer en
+            # tekst ervóór zijn het punt, met zijn eenheid; het blok en de rest volgen.
+            delen = self.splits_blokken(txt_el) if txt_el is not None else None
+            if delen is not None:
+                txt = self.tekst_voor_blok(delen[0], txt_el)
+            else:
+                txt = ws(self.inline(txt_el)) if txt_el is not None else ""
             # In het dispositief van een handeling zonder artikelen krijgen ook `(1)` en
             # `1.1.` die drie harde spaties (kb WP-42, patronen.md §9): de gedrukte
             # markering blijft, en de spaties onderscheiden het punt van een overweging
@@ -1779,6 +1825,8 @@ class FormexOmzetter:
                 if teller.get("reeks", 1) > 1:
                     anker = f"{basis}-al{teller['reeks']}-{nummer_anker(nr)}"
                 self.u.eenheid(anker, "punt", f"{nr} {txt}")
+            if delen is not None:
+                self.schrijf_blokken(delen[1])
             # Eén teller voor het hele punt: punt 4 van bijlage V bij 2012/27 heeft
             # twee opsommingen a) …, elk na een eigen inleidende P. Met een teller
             # per kind begon de tweede niet als `al2` en weigerde de zelfcontrole op
@@ -1989,22 +2037,167 @@ class FormexOmzetter:
         return onderschrift
 
     def let_op_aaneen(self, el, stuk: str, ervoor: str, erna: str) -> None:
-        """Onthoud een datum of getal die zonder spatie aan een woord vastzit (`2016betreffende`)."""
-        if el.tag not in ("DATE", "FT") or not stuk:
+        """Onthoud een datum, getal of link die zonder spatie aan een woord vastzit (`2016betreffende`)."""
+        if el.tag not in ("DATE", "FT", "LINK") or not stuk:
             return
         voor = re.search(r"\w*$", ervoor).group(0) if stuk[0].isalnum() else ""
         na = re.match(r"\w*", erna).group(0) if stuk[-1].isalnum() else ""
-        if voor or na:
-            woorden = re.findall(r"\w+", stuk)
-            self.aaneen[id(el)] = (voor + stuk if voor else "") + (woorden[-1] + na if na and not voor else na)
+        if not (voor or na):
+            return
+        woorden = re.findall(r"\w+", stuk)
+        if el.tag == "LINK":
+            # Een URI is geen woord maar een reeks; de melding noemt het woord dat de
+            # woordcontrole ziet (`rechnungshofhttps`, kb WP-115, T10-F5), niet de hele URI.
+            self.link_aaneen[id(el)] = " … ".join(
+                deel for deel in ((voor + woorden[0]) if voor else "", (woorden[-1] + na) if na else "") if deel)
+            return
+        self.aaneen[id(el)] = (voor + stuk if voor else "") + (woorden[-1] + na if na and not voor else na)
 
     def meld_aaneen(self) -> None:
-        """Een datum of getal die de bron aan een woord vastschrijft: overgenomen, en gemeld."""
-        woorden = list(dict.fromkeys(self.aaneen.values()))
-        voorbeeld = ", ".join(f"'{w}'" for w in woorden[:5]) + (f" en {len(woorden) - 5} meer" if len(woorden) > 5 else "")
-        self.metadata.setdefault("waarschuwingen", []).append(
-            f"De Formex-bron schrijft {len(self.aaneen)} keer een datum of getal aaneen met het woord "
-            f"ervoor of erna ({voorbeeld}); de omzetter neemt dat ongewijzigd over.")
+        """Een datum, getal of link die de bron aan een woord vastschrijft: overgenomen, en gemeld.
+
+        De link heeft een eigen melding: zo blijft de melding over een datum of getal
+        woord voor woord die van vóór kb WP-115, ook in een bron die beide heeft."""
+        for gevonden, soort in ((self.aaneen, "een datum of getal"), (self.link_aaneen, "een link (LINK)")):
+            if not gevonden:
+                continue
+            woorden = list(dict.fromkeys(gevonden.values()))
+            voorbeeld = ", ".join(f"'{w}'" for w in woorden[:5]) + (f" en {len(woorden) - 5} meer" if len(woorden) > 5 else "")
+            self.metadata.setdefault("waarschuwingen", []).append(
+                f"De Formex-bron schrijft {len(gevonden)} keer {soort} aaneen met het woord "
+                f"ervoor of erna ({voorbeeld}); de omzetter neemt dat ongewijzigd over.")
+
+    # ------------------------------------------------------------ een blok in een alinea
+
+    @staticmethod
+    def splits_blokken(el) -> tuple[ET.Element, list[ET.Element]] | None:
+        """Een alinea met een groep of definitielijst erin, in stukken; None zonder blok.
+
+        Geeft `(tekst vóór het eerste blok, [blok, tekst, blok, tekst, …])`, elke tekst als
+        element met de kinderen die erbij horen (staarten inbegrepen), zodat `inline()` er
+        de noten en opmaak van leest zoals in de hele alinea. De stukken worden pas bij het
+        schrijven gelezen, in documentvolgorde (`schrijf_blokken`): een noot in het blok
+        krijgt zo haar nummer vóór een noot in de rest van de alinea.
+        """
+        if el is None or not any(kind.tag in BLOK_IN_ALINEA for kind in el):
+            return None
+        kop = huidig = ET.Element(el.tag)
+        kop.text = el.text
+        stukken: list[ET.Element] = []
+        for kind in el:
+            if kind.tag in BLOK_IN_ALINEA:
+                stukken.append(kind)
+                huidig = ET.Element(el.tag)
+                huidig.text = kind.tail
+                stukken.append(huidig)
+            else:
+                huidig.append(kind)
+        return kop, stukken
+
+    def tekst_voor_blok(self, kop, ouder) -> str:
+        """De tekst vóór het eerste blok: daar staan nummer en eenheid van de alinea.
+
+        Zonder die tekst is de alinea een omhulsel van het blok, op een plek die tot kb
+        WP-115 weigerde: besluit 12 zegt niet welk anker zo'n punt krijgt (gemeten 0
+        keer), dus een weigering met een eigen melding."""
+        tekst = ws(self.inline(kop))
+        if not tekst:
+            self.u.markeer_onbekend(f"blok-in-alinea:{ouder.tag}")
+        return tekst
+
+    def schrijf_blokken(self, stukken: list) -> None:
+        """Het blok en de rest van de alinea eronder, elk stuk tekst een eigen alinea."""
+        for stuk in stukken:
+            if stuk.tag in BLOK_IN_ALINEA:
+                self.blok_in_alinea(stuk)
+            else:
+                tekst = ws(self.inline(stuk))
+                if tekst:
+                    self.u.blok(tekst)
+
+    def blok_in_alinea(self, el) -> None:
+        """Een groep of definitielijst in een alinea: tekstblokken zonder eenheid (besluit 12 van kb plan 7).
+
+        Tot kb WP-115 weigerde de omzetter elk blok buiten een citaat in een alinea
+        (`inline:GR.SEQ`, `inline:DLIST`), omdat een eenheid van de handeling er stil in
+        zou opgaan. Drie handelingen in twee bevestigingstests van de kennisbank vielen
+        daardoor weg, met gewone tekst als inhoud: een figuur in een overweging van een
+        staatssteunbesluit (32017D1436, `Figuur 1` met een opschrift en een TIFF), een
+        groep in een sanctieverordening (32022R1529) en een definitielijst in een
+        geconsolideerde verordening (02021R0404-20250609). Nu:
+
+        - een groep: de `TI` en de `STI` van haar titel elk als alinea, zoals een
+          groepstitel in een bijlage maar zonder eenheid; een `P` als alinea; een
+          afbeelding zoals een los blok (`afbeelding(blok=True)`, vastgelegd, niet overgenomen);
+        - een definitielijst: elk punt als alinea `TERM DEFINITION`, zoals de kopregel van
+          `definitiepunt()`, maar zonder eenheid.
+
+        Wat dat besluit niet dekt, blijft een weigering met de melding
+        `blok-in-alinea:<tag>`: een genummerde titel (`NP`) of een ander kind dan titel,
+        `P` of afbeelding (`LIST`, `TBL`, `NO.GR.SEQ`, een geneste groep); een `P` in de
+        groep met zo'n kind; een definitie met een opsomming of tabel; en een punt met
+        `PREFIX`. Dat laatste is de stopvraag van kb WP-115: de planner van de kennisbank
+        nummert een regel `i) …` onder een onderdeel als `art-2-1-b-i`, en besluit 12 zegt
+        "zonder anker"; welk van de twee het wordt, is een besluit, geen keuze van de omzetter.
+        """
+        if ws(el.text or "") or any(ws(kind.tail or "") for kind in el):
+            # Tekst los tussen de delen van het blok is niet gemeten en zou wegvallen.
+            self.u.markeer_onbekend(f"blok-in-alinea:{el.tag}")
+            return
+        if el.tag == "DLIST":
+            for item in el:
+                if item.tag != "DLIST.ITEM":
+                    self.u.markeer_onbekend(f"blok-in-alinea:{item.tag}")
+                    continue
+                if item.find("PREFIX") is not None:
+                    self.u.markeer_onbekend("blok-in-alinea:PREFIX")
+                    continue
+                definitie = item.find("DEFINITION")
+                if ws(item.text or "") or any(k.tag not in ("TERM", "DEFINITION") or ws(k.tail or "") for k in item) \
+                        or (definitie is not None
+                            and any(k.tag in ("LIST", "DLIST", "TBL") for k in definitie.iter() if k is not definitie)):
+                    self.u.markeer_onbekend("blok-in-alinea:DEFINITION")
+                    continue
+                term = ws(self.inline(item.find("TERM"))) if item.find("TERM") is not None else ""
+                tekst = ws(self.inline(definitie)) if definitie is not None else ""
+                regel = _geen_opsomming(" ".join(deel for deel in (term, tekst) if deel))
+                if regel:
+                    self.u.blok(regel)
+            return
+        for kind in el:
+            if kind.tag == "TITLE":
+                if ws(kind.text or "") or any(ws(deel.tail or "") for deel in kind):
+                    self.u.markeer_onbekend("blok-in-alinea:TITLE")
+                    continue
+                for deel in kind:
+                    if deel.tag not in ("TI", "STI"):
+                        self.u.markeer_onbekend(f"blok-in-alinea:{deel.tag}")
+                    elif deel.find(".//NP") is not None:
+                        # Een genummerde titel (`A. …`) is in een bijlage een onderdeel met
+                        # een anker; hier zou het een tekstregel worden.
+                        self.u.markeer_onbekend("blok-in-alinea:NP")
+                    else:
+                        tekst = ws(self.inline(deel))
+                        if tekst:
+                            self.u.blok(tekst)
+            elif kind.tag == "P":
+                verboden = next((k.tag for k in kind if k.tag in GEEN_BLOKTEKST), None)
+                if verboden:
+                    self.u.markeer_onbekend(f"blok-in-alinea:{verboden}")
+                    continue
+                tekst = ws(self.inline(kind))
+                if tekst:
+                    self.u.blok(tekst)
+            elif kind.tag == "INCL.ELEMENT":
+                bijschrift = self.afbeelding(kind, blok=True)
+                if bijschrift is None:
+                    self.u.markeer_onbekend("blok-in-alinea:INCL.ELEMENT")
+                elif bijschrift:
+                    self.u.blok(bijschrift)
+            elif kind.tag in METADATA:
+                continue
+            else:
+                self.u.markeer_onbekend(f"blok-in-alinea:{kind.tag}")
 
     def meld_vast_na_noot(self) -> None:
         """Een nootverwijzing die de bron aan het woord erna vastschrijft: gescheiden, en gemeld."""
@@ -2184,16 +2377,29 @@ class FormexOmzetter:
             if item.tag != "ITEM":
                 continue
             np = item.find("NP")
+            # Een groep of definitielijst in de tekst van het onderdeel (kb WP-115): in de
+            # `TXT`, of in de eerste `P` van een onderdeel zonder `NP` (een streepje). De
+            # tekst ervóór is het onderdeel, met zijn eenheid; het blok en de rest volgen.
+            delen = None
             if np is not None:
                 nr = ws(self.inline(np.find("NO.P"))) if np.find("NO.P") is not None else ""
                 txt_el = np.find("TXT")
-                txt = ws(self.inline(txt_el)) if txt_el is not None else ""
+                delen = self.splits_blokken(txt_el) if txt_el is not None else None
+                if delen is not None:
+                    txt = self.tekst_voor_blok(delen[0], txt_el)
+                else:
+                    txt = ws(self.inline(txt_el)) if txt_el is not None else ""
                 binnen = [c for c in np if c.tag not in ("NO.P", "TXT")]
             else:
                 nr = ""
                 eerste = item.find("P")
-                txt = ws(self.inline(eerste)) if eerste is not None and eerste.find("LIST") is None else ""
-                binnen = [c for c in item if c is not eerste or not txt]
+                if eerste is not None and eerste.find("LIST") is None:
+                    delen = self.splits_blokken(eerste)
+                if delen is not None:
+                    txt = self.tekst_voor_blok(delen[0], eerste)
+                else:
+                    txt = ws(self.inline(eerste)) if eerste is not None and eerste.find("LIST") is None else ""
+                binnen = [c for c in item if c is not eerste or (not txt and delen is None)]
             anker = f"{basis}-{extra}{nummer_anker(nr)}" if (basis and genummerd and nr) else ""
             if anker:
                 gezien[anker] += 1
@@ -2204,6 +2410,8 @@ class FormexOmzetter:
                 self.u.blok(regel)
             if anker:
                 self.u.eenheid(anker, "onderdeel", regel)
+            if delen is not None:
+                self.schrijf_blokken(delen[1])
             # Eén teller voor het hele onderdeel: artikel 2, lid 2, onder h) van
             # de consumentenkredietrichtlijn (32023L2225) heeft twee reeksen
             # i)–iii) met een alinea ertussen, elk in een eigen P. Met een verse
