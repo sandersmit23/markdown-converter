@@ -209,6 +209,21 @@ def test_considerans_lijst_en_nog_niet_geldende_structuur_geven_de_raw_vorm_van_
         "art-4b-a", "art-4b-b", "hfd-5", "art-5"]
 
 
+def test_deze_plaatje_en_dossierref_geven_de_raw_vorm_van_de_kennisbank():
+    """De fixture van kb WP-114 (`tests/fixtures/bwb/README.md`, besluit 11 van haar plan 7): de kennisbank las
+    deze raw-vorm eerst met haar eigen planner, poort en bronlezing (0 bevindingen); de omzetter schrijft haar byte
+    voor byte, en zijn eenheden zijn precies de ankers die haar planner zet."""
+    markdown, eenheden, onbekend, extra = wetten.bwb_xml.omzetten(
+        (FIXTURE_BWB / "deze-plaatje-dossierref.xml").read_bytes())
+    assert markdown == (FIXTURE_BWB / "deze-plaatje-dossierref.md").read_text(encoding="utf-8")
+    assert not onbekend
+    assert [e.anker for e in eenheden] == [
+        "hfd-1", "art-1", "art-1-a", "art-1-b", "art-1-c", "art-2", "art-2-1", "art-2-2", "art-3", "hfd-2",
+        "art-4", "art-4-1", "art-4-2", "art-5"]
+    # Elk beeld vastgelegd, ook het plaatje zonder bijschrift; de kennisbank zet daarop `image-omitted`.
+    assert [b["naam"] for b in extra["afbeeldingen_weggelaten"]] == ["9001.png", "9002.png", "9003.png", "9004.png"]
+
+
 def test_considerans_lijst_houdt_haar_nummering_zonder_eenheid():
     """Het Besluit elektronisch procederen (BWBR0044275): `plat()` sloeg `<li.nr>` over, en de vier
     grondslagen onder `Gelet op:` stonden er zonder `a.`–`d.` (kb G8 R1, H7). Nu een lijst zoals elke
@@ -594,9 +609,12 @@ def test_circulaire_heeft_de_vorm_van_een_regeling_met_divisies_als_kop_zonder_e
 
 
 def test_onbekend_element_in_een_circulaire_blijft_een_weigering():
+    # Tot kb WP-114 stond hier `<plaatje>schema</plaatje>`; een plaatje direct in een blok heeft nu een
+    # vorm (en een plaatje met eigen tekst een eigen weigering, zie onder). De test gaat over een element
+    # zonder behandeling, dus nu een element dat de BWB-route niet kent.
     xml = circulaire(DIVISIE.replace("<tussenkop>Behandeling:</tussenkop>",
-                                     "<plaatje>schema</plaatje>"))
-    with pytest.raises(ConversionError, match="plaatje"):
+                                     "<kader>schema</kader>"))
+    with pytest.raises(ConversionError, match="blok:kader"):
         wetten.bwb_xml.omzetten(xml)
 
 
@@ -781,3 +799,100 @@ def test_witruimte_aan_de_rand_van_een_nadruk_blijft_buiten_de_markering(bron, v
     """Regeling ggz en fz 2026 (BWBR0051654): `zorgverlener </nadruk>die` werd `zorgverlenerdie`."""
     markdown, _, _, _ = wetten.bwb_xml.omzetten(wet(f"<al>{bron}</al>"))
     assert verwacht in markdown
+
+
+# ---------- `<deze>`, `<dossierref>` en `<plaatje>` in lijst en blok (kb WP-114, T7-F1, T11-F1, T11-F2) ----------
+
+PLAATJE = ('<plaatje><illustratie id="{id}" naam="{id}.png" breedte="80" hoogte="80" formaat="png"/>'
+           '{bijschrift}</plaatje>')
+
+
+def plaatje(id_: str, bijschrift: str = "") -> str:
+    return PLAATJE.format(id=id_, bijschrift=f"<bijschrift>{bijschrift}</bijschrift>" if bijschrift else "")
+
+
+def test_deze_in_een_mandaatondertekening_is_tekst_op_een_regel():
+    """`inline:deze` hield zes regelingen in twee bevestigingstests van de kennisbank buiten de deur (T7-F1),
+    en de getuigen BWBR0051828, BWBR0052467 en BWBR0052557. Ook zonder witruimte tussen de delen een spatie."""
+    for tussen in (" ", ""):
+        sluiting = ("<regeling-sluiting><ondertekening>"
+                    f"<functie>De Minister van Financiën,</functie>{tussen}<deze>namens deze,</deze>{tussen}"
+                    f"<functie>de secretaris-generaal,</functie>{tussen}"
+                    "<naam><voornaam>A.</voornaam><achternaam>Proef</achternaam></naam>"
+                    "</ondertekening></regeling-sluiting>")
+        markdown, eenheden, onbekend, _ = wetten.bwb_xml.omzetten(wet(sluiting=sluiting))
+        assert markdown.endswith("\n\nDe Minister van Financiën, namens deze, de secretaris-generaal, A. Proef\n")
+        assert [e.anker for e in eenheden] == ["art-1"] and not onbekend
+
+
+def test_dossierref_in_een_alinea_is_alleen_haar_tekst():
+    """`inline:dossierref` (T11-F2; getuigen BWBR0052884, BWBR0052900): de tekst zonder grens, zoals `<extref>`;
+    het attribuut `dossier` is geen tekst."""
+    markdown, _, onbekend, _ = wetten.bwb_xml.omzetten(wet(
+        '<al>Zie de toelichting (<dossierref dossier="36800">Kamerstukken II 2025/26, 36 800, nr. 3</dossierref>)'
+        ' en de nota<dossierref dossier="36800">bij 36 800</dossierref>.</al>'))
+    assert "Zie de toelichting (Kamerstukken II 2025/26, 36 800, nr. 3) en de notabij 36 800." in markdown
+    assert "dossier" not in markdown and not onbekend
+
+
+def test_plaatje_in_een_lijstitem_is_een_vervolgregel_en_opent_zo_nodig_het_item():
+    """`li:plaatje` (T11-F1): achter de tekst een vervolgregel; vóór de tekst eerst de regel met alleen het
+    nummer, zoals bij een item dat met een sublijst begint; zonder bijschrift niets, en het item opent dan
+    met zijn eerste `<al>`. Het anker hangt aan het nummer, zoals altijd."""
+    lijst = ("<al>Borden:</al><lijst>"
+             f"<li><li.nr>a.</li.nr><al>bord A1;</al>{plaatje('1', 'Figuur 1')}</li>"
+             f"<li><li.nr>b.</li.nr>{plaatje('2', 'Figuur 2')}<al>bord A2;</al></li>"
+             f"<li><li.nr>c.</li.nr>{plaatje('3')}<al>bord A3.</al></li>"
+             f"<li><li.nr>d.</li.nr><al>bord A4 met</al><lijst><li><li.nr>1°.</li.nr><al>pijl;</al>"
+             f"{plaatje('4', 'Figuur 4')}</li></lijst></li></lijst>")
+    markdown, eenheden, onbekend, extra = wetten.bwb_xml.omzetten(wet(lijst))
+    assert ("Borden:\n\n- a. bord A1;\n  Figuur 1\n- b.\n  Figuur 2\n  bord A2;\n- c. bord A3.\n"
+            "- d. bord A4 met\n  - 1°. pijl;\n    Figuur 4\n") in markdown
+    assert [(e.anker, e.tekst) for e in eenheden] == [
+        ("art-1", "Artikel 1"), ("art-1-a", "a. bord A1;"), ("art-1-b", "b."), ("art-1-c", "c. bord A3."),
+        ("art-1-d", "d. bord A4 met"), ("art-1-d-1", "1°. pijl;")]
+    assert [b["naam"] for b in extra["afbeeldingen_weggelaten"]] == ["1.png", "2.png", "3.png", "4.png"]
+    assert not onbekend
+
+
+def test_plaatje_direct_in_een_structuurelement_is_een_eigen_alinea():
+    """`blok:plaatje` (T11-F1; getuige BWBR0039112): een plaatje in een hoofdstuk tussen twee artikelen gaat zoals
+    in een lid of bijlage (kb WP-20): het bijschrift als alinea, zonder eenheid; zonder bijschrift niets."""
+    xml = wet().replace(b"<regeling-tekst>\n<artikel>", (
+        "<regeling-tekst><hoofdstuk><kop><label>Hoofdstuk</label><nr>1</nr><titel>Kavel</titel></kop>"
+        "<artikel>").encode()).replace(b"</artikel>\n</regeling-tekst>", (
+        f"</artikel>{plaatje('5', 'Kaart 1. Ligging van de kavel')}{plaatje('6')}"
+        "<artikel><kop><label>Artikel</label><nr>2</nr></kop><al>Slot.</al></artikel>"
+        "</hoofdstuk></regeling-tekst>").encode())
+    markdown, eenheden, onbekend, extra = wetten.bwb_xml.omzetten(xml)
+    assert "### Artikel 1\n\nTekst.\n\nKaart 1. Ligging van de kavel\n\n### Artikel 2\n\nSlot.\n" in markdown
+    assert [e.anker for e in eenheden] == ["hfd-1", "art-1", "art-2"] and not onbekend
+    assert [b["naam"] for b in extra["afbeeldingen_weggelaten"]] == ["5.png", "6.png"]
+
+
+@pytest.mark.parametrize("plek", ["lijst", "blok", "bijlage"])
+def test_plaatje_met_eigen_tekst_blijft_een_weigering(plek):
+    """`plaatje()` leest alleen `illustratie` en `bijschrift`; eigen tekst zou stil wegvallen, nu het plaatje in
+    een lijstitem en een blok niet meer weigert. In de 58 plaatjes van de kennisbank (9 oktober 2026) staat er
+    geen. Ook in een bijlage, waar het plaatje al sinds kb WP-20 een vorm had."""
+    eigen = '<plaatje>schema<illustratie id="7" naam="7.png"/></plaatje>'
+    if plek == "lijst":
+        xml = wet(f"<lijst><li><li.nr>a.</li.nr><al>tekst</al>{eigen}</li></lijst>")
+    elif plek == "blok":
+        xml = wet().replace(b"</artikel>\n</regeling-tekst>", f"</artikel>{eigen}</regeling-tekst>".encode())
+    else:
+        xml = wet(bijlage=f"<bijlage><kop><label>Bijlage</label><nr>1</nr></kop>{eigen}</bijlage>")
+    with pytest.raises(ConversionError, match="eigen tekst"):
+        wetten.bwb_xml.omzetten(xml)
+
+
+def test_plaatje_met_tekst_achter_een_kind_blijft_een_weigering():
+    xml = wet('<lijst><li><li.nr>a.</li.nr><plaatje><illustratie id="8" naam="8.png"/>schema</plaatje></li></lijst>')
+    with pytest.raises(ConversionError, match="eigen tekst"):
+        wetten.bwb_xml.omzetten(xml)
+
+
+def test_plaatje_met_een_onbekend_kind_in_een_lijstitem_blijft_een_weigering():
+    xml = wet('<lijst><li><li.nr>a.</li.nr><plaatje><legenda>rood</legenda></plaatje></li></lijst>')
+    with pytest.raises(ConversionError, match="plaatje:legenda"):
+        wetten.bwb_xml.omzetten(xml)

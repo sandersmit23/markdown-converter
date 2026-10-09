@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<toestand bwb-id="BWBR9999114" inwerkingtreding="2026-07-01">
+<wetgeving>
+<intitule>Regeling van de Minister van Proeven van 1 juli 2026, nr. 114, houdende regels over proefborden en de beveiliging van proefsystemen (Proefregeling borden en beveiliging)</intitule>
+<citeertitel>Proefregeling borden en beveiliging</citeertitel>
+<regeling>
+<aanhef>
+<considerans><considerans.al>Gelet op artikel 2 van de <extref doc="jci1.3:c:BWBR9999001">Proefwet</extref>;</considerans.al></considerans>
+<afkondiging><al>Besluit:</al></afkondiging>
+</aanhef>
+<regeling-tekst>
+<hoofdstuk bwb-ng-variabel-deel="/Hoofdstuk1" status="goed"><kop><label>Hoofdstuk</label><nr>1</nr><titel>Borden</titel></kop>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk1/Artikel1" status="goed"><kop><label>Artikel</label><nr>1</nr><titel>Borden</titel></kop>
+<al>In deze regeling worden de volgende borden gebruikt:</al>
+<lijst type="expliciet"><li><li.nr>a.</li.nr><al>bord P1: een rond bord met een rode rand;</al><plaatje><illustratie id="9001" naam="9001.png" alt="Bord P1" breedte="80" hoogte="80" formaat="png"/><bijschrift locatie="onder">Figuur 1. Bord P1</bijschrift></plaatje></li>
+<li><li.nr>b.</li.nr><plaatje><illustratie id="9002" naam="9002.png" alt="Bord P2" breedte="80" hoogte="80" formaat="png"/><bijschrift locatie="boven">Figuur 2. Bord P2</bijschrift></plaatje><al>bord P2: een driehoekig bord met een witte rand;</al></li>
+<li><li.nr>c.</li.nr><plaatje><illustratie id="9003" naam="9003.png" breedte="80" hoogte="80" formaat="png"/></plaatje><al>bord P3: een vierkant blauw bord.</al></li>
+</lijst>
+</artikel>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk1/Artikel2" status="goed"><kop><label>Artikel</label><nr>2</nr><titel>Plaatsing</titel></kop>
+<lid><lidnr>1</lidnr><al>Een bord wordt geplaatst zoals figuur 3 aangeeft.</al></lid>
+<lid><lidnr>2</lidnr><al>Een bord P3 wordt niet hoger dan twee meter geplaatst.</al></lid>
+</artikel>
+<plaatje><illustratie id="9004" naam="9004.png" alt="Figuur 3" breedte="400" hoogte="200" formaat="png"/><bijschrift locatie="onder">Figuur 3. Plaatsing van een bord langs de proefbaan</bijschrift></plaatje>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk1/Artikel3" status="goed"><kop><label>Artikel</label><nr>3</nr><titel>Onderhoud</titel></kop><al>De beheerder houdt de borden schoon.</al></artikel>
+</hoofdstuk>
+<hoofdstuk bwb-ng-variabel-deel="/Hoofdstuk2" status="goed"><kop><label>Hoofdstuk</label><nr>2</nr><titel>Beveiliging</titel></kop>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk2/Artikel4" status="goed"><kop><label>Artikel</label><nr>4</nr><titel>Maatregelen</titel></kop>
+<lid><lidnr>1</lidnr><al>De beheerder treft de maatregelen, bedoeld in de memorie van toelichting (<dossierref dossier="36999">Kamerstukken II 2025/26, 36 999, nr. 3</dossierref>).</al></lid>
+<lid><lidnr>2</lidnr><al>Een incident wordt gemeld binnen 24 uur, zoals de toelichting<dossierref dossier="36999">bij wetsvoorstel 36 999</dossierref> het beschrijft.</al></lid>
+</artikel>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk2/Artikel5" status="goed"><kop><label>Artikel</label><nr>5</nr><titel>Citeertitel</titel></kop><al>Deze regeling wordt aangehaald als: Proefregeling borden en beveiliging.</al></artikel>
+</hoofdstuk>
+</regeling-tekst>
+<regeling-sluiting>
+<al>Deze regeling zal met de toelichting in de Staatscourant worden geplaatst.</al>
+<ondertekening><functie>De Minister van Proeven,</functie> <deze>namens deze,</deze> <functie>de directeur-generaal Proefzaken,</functie> <naam><voornaam>A.</voornaam> <achternaam>Proef</achternaam></naam></ondertekening>
+<ondertekening><functie>De Staatssecretaris van Toetsen</functie><deze>namens deze</deze><functie>de directeur Toetsing</functie><naam><voornaam>B.</voornaam><achternaam>Toets</achternaam></naam></ondertekening>
+</regeling-sluiting>
+</regeling>
+</wetgeving>
+</toestand>

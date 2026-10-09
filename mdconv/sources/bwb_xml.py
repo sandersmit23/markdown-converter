@@ -141,8 +141,15 @@ class BwbOmzetter:
         # de Wet op de medische hulpmiddelen</afk> voor «…»`, BWBR0042755); tot kb WP-43 een
         # weigering (T6-F4). `<organisatie>` staat in een ondertekening (`De <functie>Minister
         # </functie> van <organisatie>Justitie</organisatie>`).
+        # `<deze>` is `namens deze,` in een mandaatondertekening (`<functie>…,</functie> <deze>Namens
+        # deze,</deze> <functie>…`), en `<dossierref>` een Kamerstukverwijzing in een alinea
+        # (`Kamerstukken II 2025/26, 36 800, nr. 3`); het attribuut `dossier` is geen tekst, zoals
+        # bij `<extref>`. Tot kb WP-114 een weigering (`inline:deze`, `inline:dossierref`; T7-F1 en
+        # T11-F2): zes regelingen in twee bevestigingstests van de kennisbank, en de getuigen
+        # BWBR0051828, BWBR0052467, BWBR0052557, BWBR0052884 en BWBR0052900 (besluit 11 van haar plan 7).
         if tag in ("al", "extref", "intref", "datum", "voornaam", "achternaam",
-                   "functie", "organisatie", "plaats", "sub", "unl", "inf", "afk"):
+                   "functie", "organisatie", "plaats", "sub", "unl", "inf", "afk",
+                   "deze", "dossierref"):
             return self.inline(el, noot_prefix)
         self.u.markeer_onbekend(f"inline:{tag}")
         return self.inline(el, noot_prefix)
@@ -424,7 +431,10 @@ class BwbOmzetter:
                         self.inhoud(deel, basis="", prefix_noot="")
             elif kind.tag in OVERSLAAN:
                 continue
-            elif kind.tag in ("al", "lijst", "table", "tussenkop"):
+            elif kind.tag in ("al", "lijst", "table", "tussenkop", "plaatje"):
+                # Een `<plaatje>` direct in een hoofdstuk of een andere structuur (een kaart in een
+                # kavelbesluit, BWBR0039112) gaat zoals in een lid of bijlage: het bijschrift als eigen
+                # alinea, het beeld vastgelegd. Tot kb WP-114 `blok:plaatje` (T11-F1).
                 self.inhoud(kind, basis="", prefix_noot="")
             else:
                 self.u.markeer_onbekend(f"blok:{kind.tag}")
@@ -606,8 +616,18 @@ class BwbOmzetter:
         (BWBR0006251, één plaatje in een bijlage) en de Opiumwet (BWBR0001941, elf:
         zes in een divisie, vijf in een tabelcel); beide weigerden op `inhoud:plaatje`
         (T3-F16, kb WP-20). Een `bijschrift` (`Figuur 1`) is brontekst en blijft;
-        een `illustratie` zonder bijschrift laat niets achter.
+        een `illustratie` zonder bijschrift laat niets achter. Sinds kb WP-114 ook in een
+        lijstitem (`lijst()`) en direct in een structuurelement (`container_inhoud()`).
+
+        Eigen tekst naast `illustratie` en `bijschrift` las deze functie nooit; in een context
+        waar het plaatje tot kb WP-114 weigerde, zou die tekst stil wegvallen. Daarom een
+        weigering, in elke context: in de 58 plaatjes van de 156 BWB-bronnen van de kennisbank
+        (9 oktober 2026) staat geen eigen tekst.
         """
+        if (el.text or "").strip() or any((kind.tail or "").strip() for kind in el):
+            raise ConversionError(
+                "Een BWB-<plaatje> met eigen tekst naast illustratie en bijschrift; die tekst "
+                "heeft geen plek, omzetting geweigerd.")
         bijschriften = []
         for kind in el:
             if kind.tag == "illustratie":
@@ -695,6 +715,21 @@ class BwbOmzetter:
                     regels.append(self.lijst(kind, anker or "", "", diepte + 1, prefix_noot))
                 elif kind.tag == "al":
                     regels.append(f"{inspring}  {ws(self.inline(kind, prefix_noot))}")
+                elif kind.tag == "plaatje":
+                    # Een verkeersbord of sein bij een onderdeel (T11-F1, kb WP-114; tot dan
+                    # `li:plaatje`). Het bijschrift is een vervolgregel van het item, zoals een latere
+                    # `<al>`; opent het het item, dan eerst de regel met alleen het nummer, zoals bij
+                    # een item dat met een sublijst begint. Zonder bijschrift blijft er niets over, en
+                    # opent het het item niet: de eerste `<al>` daarna is dan de itemregel.
+                    bijschrift = self.plaatje(kind)
+                    if not bijschrift:
+                        continue
+                    if eerste:
+                        regels.append(f"{inspring}- {nr}")
+                        if anker:
+                            self.u.eenheid(anker, "onderdeel", nr)
+                        eerste = False
+                    regels.append(f"{inspring}  {bijschrift}")
                 elif kind.tag == "table":
                     self.tabel(kind, prefix_noot)
                 elif kind.tag in OVERSLAAN:
