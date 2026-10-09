@@ -3,6 +3,27 @@
 Nieuwste bovenaan. De inhoudelijke uitleg staat in `CLAUDE.md`; hier alleen wat er
 veranderde en waarom.
 
+## 9 oktober 2026 — `<deze>`, `<dossierref>` en `<plaatje>` in lijst en blok in de BWB-XML (kb WP-114)
+
+- **`<deze>` en `<dossierref>`** (`inline_el()`): gewone tekst, zoals `<functie>` en `<extref>`. Een
+  mandaatondertekening (`De Minister van Financiën, namens deze, B. van den Dungen secretaris-generaal`) blijft één
+  regel met een spatie tussen de delen; een Kamerstukverwijzing in een alinea alleen haar tekst. Tot nu toe
+  `inline:deze` en `inline:dossierref`: zes regelingen in twee bevestigingstests van de kennisbank (T7-F1, T11-F2).
+- **`<plaatje>` in een lijstitem** (`lijst()`) en **direct in een structuurelement** (`container_inhoud()`): zoals in
+  een lid, bijlage of tabelcel; het bijschrift is tekst (een vervolgregel van het item, of een eigen alinea), het beeld
+  komt in `afbeeldingen_weggelaten`. Opent een plaatje met bijschrift het item, dan eerst de regel met alleen het
+  nummer. Tot nu toe `li:plaatje` en `blok:plaatje` (T11-F1, twee regelingen).
+- **Een plaatje met eigen tekst** (`plaatje()`) weigert, in elke context: die tekst las de omzetter nooit, en zou nu
+  stil wegvallen. In de 58 plaatjes van de 156 BWB-bronnen van de kennisbank staat er geen.
+- Tests: de fixture `tests/fixtures/bwb/deze-plaatje-dossierref.{xml,md}` (byte voor byte die van de kennisbank, die de
+  vorm eerst met haar eigen lezers las; de eenheden zijn precies de ankers van haar planner) en negen gevallen per
+  context, waarvan vijf weigeringen; de circulairetest weigert nu op een ander onbekend element (`blok:kader`), want een
+  plaatje in een blok heeft een vorm. 687 tests (10 nieuw, die op de oude code alle tien falen). Meetlat (alleen
+  Formex): geen verschil. Opgehaald met `kb_fetch`: van de negen goedgekeurde kandidaten weigerden er vóór de wijziging
+  zes op hun eigen context (`inline:deze` drie, `blok:plaatje` een, `inline:dossierref` twee) en drie op iets anders;
+  erna zijn BWBR0051828, BWBR0052467, BWBR0052557, BWBR0052884 en BWBR0052900 `ok`, en weigert het Kavelbesluit II
+  (BWBR0039112) verderop op een nieuw element (`table:bron`), dat niet in deze wijziging zit.
+
 ## 6 oktober 2026 — eerlijke ophaalmeldingen voor EUR-Lex en het Hof (kb WP-105)
 
 - **EUR-Lex-foutpagina is een weigering** (`_eurlex_foutpagina()`): de portal gaf voor 32004D0411 en 32004L0048

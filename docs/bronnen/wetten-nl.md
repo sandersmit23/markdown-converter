@@ -39,3 +39,14 @@ architectuur en verwijst hiernaartoe.
   weigering, net als `<structuurtekst>` buiten zo'n element en een vervallen artikel erin. Gemeten op de
   vijf regelingen die de kennisbank daardoor miste (Besluit digitale overheid, Vreemdelingenwet 2000, Wet
   digitale overheid, Jeugdwet, Wft); de raw-vorm is de fixture `tests/fixtures/bwb/`.
+  Sinds kb WP-114 (9 oktober 2026) drie vormen erbij (besluit 11 van haar plan 7). **`<deze>`** (`namens deze,`
+  in een mandaatondertekening) en **`<dossierref>`** in een alinea (`Kamerstukken II 2025/26, 36 800, nr. 3`) zijn
+  gewone tekst, zoals `<functie>` en `<extref>`; in een ondertekening staat `namens deze,` op de ene regel, met een
+  spatie tussen de delen, en het attribuut `dossier` is geen tekst. Een **`<plaatje>` in een lijstitem** wordt een
+  vervolgregel met het bijschrift (opent het het item, dan eerst `- b.` met alleen het nummer, zoals bij een item dat
+  met een sublijst begint), en een **`<plaatje>` direct in een structuurelement** een eigen alinea met het bijschrift,
+  zoals al in een lid of bijlage; het beeld zelf wordt vastgelegd in `afbeeldingen_weggelaten`, niet overgenomen, en
+  zonder bijschrift laat een plaatje niets achter. Een plaatje met eigen tekst naast `illustratie` en `bijschrift`
+  weigert nu in elke context, want die tekst zou stil wegvallen. Tot dan weigerden `inline:deze`, `inline:dossierref`,
+  `li:plaatje` en `blok:plaatje` negen regelingen in twee bevestigingstests van de kennisbank; de raw-vorm is de
+  fixture `tests/fixtures/bwb/deze-plaatje-dossierref.{xml,md}`.
