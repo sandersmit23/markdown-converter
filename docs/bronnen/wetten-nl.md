@@ -36,7 +36,7 @@ architectuur en verwijst hiernaartoe.
   (`[Red: Dit onderdeel is nog niet inwerking getreden]`) of anders `[Nog niet in werking getreden.]`, en
   de artikelen erin worden geschreven zoals een nog niet geldend artikel (melding onder de kop, leden als
   platte alinea zonder eenheid), ook zonder eigen status. Op elk ander element blijft `nogniet` een
-  weigering, net als `<structuurtekst>` buiten zo'n element en een vervallen artikel erin. Gemeten op de
+  weigering, net als (tot kb WP-123) `<structuurtekst>` buiten zo'n element en een vervallen artikel erin. Gemeten op de
   vijf regelingen die de kennisbank daardoor miste (Besluit digitale overheid, Vreemdelingenwet 2000, Wet
   digitale overheid, Jeugdwet, Wft); de raw-vorm is de fixture `tests/fixtures/bwb/`.
   Sinds kb WP-114 (9 oktober 2026) drie vormen erbij (besluit 11 van haar plan 7). **`<deze>`** (`namens deze,`
@@ -50,3 +50,16 @@ architectuur en verwijst hiernaartoe.
   weigert nu in elke context, want die tekst zou stil wegvallen. Tot dan weigerden `inline:deze`, `inline:dossierref`,
   `li:plaatje` en `blok:plaatje` negen regelingen in twee bevestigingstests van de kennisbank; de raw-vorm is de
   fixture `tests/fixtures/bwb/deze-plaatje-dossierref.{xml,md}`.
+  Sinds kb WP-123 (8 november 2026) vier vormen erbij (besluit 8.5 van haar plan 8). **Een nootreeks die binnen een
+  bijlage opnieuw bij 1 begint** telt de reeks: `<noot>` en `sup`-noot samen, in bronvolgorde, en een 1 terwijl de
+  lopende reeks er al een heeft opent de volgende (`[^annex-3-1]`, `[^annex-3-n2-1]`, `[^annex-3-n3-1]`); een
+  `sup`-marker hoort bij de eerstvolgende definitie met zijn nummer, anders bij de laatste ervoor (`nootreeksen()`).
+  Een ander herhaald nummer blijft een weigering. **Een `<noot.lijst>`** in een noot geeft haar items met hun teken op
+  de definitieregel (`[^4]: Bedoeld zijn: a. de GGD; …`); een geneste lijst of een `<naamlijst>` weigert. **Een
+  artikel zonder nummer** (de `Algemene bepaling` van de Grondwet, `(Gereserveerd)` in Boek 5 Sv) is een kop zonder
+  eenheid met zijn tekst; `<label>Artikel</label>` zonder nummer, een genummerd lid of onderdeel erin, of een
+  vervallen of nog niet geldend artikel zonder nummer weigert. En **een `<structuurtekst>`** onder een geldend
+  element (`[Vervallen]` in de wetten-BES) is een alinea zonder eenheid, zoals onder een nog niet geldend element;
+  met `status="vervallen"` weigert ze. Tot dan weigerden de vier vormen T7-F2 (drie keer), T14-F1, T14-F2 en T14-F3
+  in de tests van de kennisbank, en ontbraken de Grondwet en het Wetboek van Strafvordering; de raw-vorm is de fixture
+  `tests/fixtures/bwb/noten-artikel-zonder-nummer.{xml,md}`.

@@ -3,6 +3,30 @@
 Nieuwste bovenaan. De inhoudelijke uitleg staat in `CLAUDE.md`; hier alleen wat er
 veranderde en waarom.
 
+## 8 november 2026 — BWB: nootreeksen, nootlijst, artikel zonder nummer en structuurtekst (kb WP-123)
+
+Cluster E van kb-plan 8, besluit 8.5: vier BWB-vormen die de omzetter weigerde. Samen vier van de vijf ontbrekende
+wetten-nl-documenten in bevestigingstest 3 van de kennisbank, en de Grondwet en het Wetboek van Strafvordering.
+
+- **Nootreeks die binnen een bijlage opnieuw bij 1 begint** (T7-F2, drie keer in de tests): `nootreeksen()` leest per
+  bijlage vooraf de labels; `<noot>` en `sup`-noot tellen samen één reeks, een herhaalde 1 opent de volgende
+  (`annex-1-n2-1`), een `sup`-marker hoort bij de eerstvolgende definitie met zijn nummer. Een ander herhaald nummer
+  blijft `definieer()`-weigering. Met één reeks verandert geen label.
+- **`<noot.lijst>`** (T14-F3): de items met hun teken op de definitieregel (`nootlijst()`); een geneste lijst, een los
+  kind of een `<naamlijst>` weigert.
+- **Artikel zonder nummer** (T14-F2, kb K6 R1/R2): een kop zonder eenheid met de tekst van de bron
+  (`artikel_zonder_nummer()`); `<label>Artikel</label>` zonder nummer, een genummerd lid of onderdeel erin, en een
+  vervallen of nog niet geldend artikel zonder nummer blijven een weigering.
+- **`<structuurtekst>`** onder een geldend element (T14-F1, de wetten-BES): een alinea zonder eenheid, zoals onder
+  een nog niet geldend element sinds kb WP-103; met `status="vervallen"` een weigering.
+  `test_structuurtekst_buiten_een_nog_niet_geldend_element_is_een_weigering` is daarom bewust omgezet naar de nieuwe
+  vorm (`…_is_een_alinea_onder_de_kop`).
+- Tests: 738 (17 nieuw, waarvan 13 gevallen op de oude code falen; de rest bewaakt wat een weigering blijft). De
+  fixture `tests/fixtures/bwb/noten-artikel-zonder-nummer.{xml,md}` is die van de kennisbank, byte voor byte, en de
+  eenheden zijn precies de elf ankers van haar lezers. Oude en nieuwe omzetter gelijk op alle 193 BWB-bronnen in
+  `raw/` van de kennisbank (Markdown, eenheden, onbekend en extra). Meetlat (alleen Formex): geen verschil
+  (wetgeving 246/266, hof 41/41).
+
 ## 8 november 2026 — handelsverdediging, `bis`-bijlage, randnadruk en HvJ-tabelcellen (kb WP-120 deel B)
 
 Uit de testrun van de kennisbank van 7 november 2026: 70 willekeurig getrokken EUR-Lex-handelingen en EU-arresten
