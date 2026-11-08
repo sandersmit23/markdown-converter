@@ -82,9 +82,12 @@ class BwbOmzetter:
         self.nootlabels: set[str] = set()
         self.noten: list[tuple[str, str]] = []
         self.afbeeldingen_weggelaten: list[dict] = []
-        # De labels van de `sup`-noten die een definitie hebben, per bijlage vooraf gelezen
-        # (`bijlage()`): een marker staat meestal vóór zijn definitie.
-        self.sup_definities: set[str] = set()
+        # De labels van de noten van de bijlage die nu wordt geschreven, vooraf gelezen
+        # (`nootreeksen()`): een `<noot>`, een definitie-`<al>` en een `<sup>` (marker of het
+        # nummer van een definitie) naar zijn label. Een marker staat meestal vóór zijn definitie.
+        self.noot_labels: dict = {}
+        self.definitie_labels: dict = {}
+        self.sup_labels: dict = {}
 
     # ---------- inline ----------
     def inline(self, el, noot_prefix: str = "") -> str:
@@ -122,8 +125,10 @@ class BwbOmzetter:
             # Anders is het een macht: de Archiefregeling (BWBR0027041) schrijft
             # `kg/m<sup>3</sup>` en heeft geen enkele noot, en `[^3]` wees daar naar niets
             # (T6-F3, kb WP-28 en WP-43).
-            if tekst.isdigit() and f"{noot_prefix}{tekst}" in self.sup_definities:
-                return f"[^{noot_prefix}{tekst}]"
+            # Het label komt uit `nootreeksen()`: met een reeks die binnen de bijlage opnieuw bij 1
+            # begint, is het nummer alleen niet genoeg (T7-F2, kb WP-123).
+            if tekst.isdigit() and el in self.sup_labels:
+                return f"[^{self.sup_labels[el]}]"
             return f"^{tekst}^" if tekst else ""
         if tag == "naam":
             # `<naam><voornaam>J. P. H.</voornaam><achternaam>Donner</achternaam></naam>`
@@ -182,21 +187,99 @@ class BwbOmzetter:
         if el.get("type") != "voet":
             raise ConversionError(
                 f"Een BWB-noot van type {el.get('type')!r}; alleen `voet` is gemeten.")
-        onbekend = [k.tag for k in el if k.tag not in ("noot.nr", "noot.al")]
+        onbekend = [k.tag for k in el if k.tag not in ("noot.nr", "noot.al", "noot.lijst")]
         if onbekend:
-            raise ConversionError(f"Een BWB-noot bevat {onbekend}; alleen noot.nr en noot.al zijn gemeten.")
+            raise ConversionError(f"Een BWB-noot bevat {onbekend}; alleen noot.nr, noot.al en noot.lijst "
+                                  "zijn gemeten.")
         nr = ws("".join(el.find("noot.nr").itertext())) if el.find("noot.nr") is not None else ""
-        alineas = [ws(self.inline(al)) for al in el.findall("noot.al")]
-        tekst = " ".join(a for a in alineas if a)
+        delen = []
+        for kind in el:
+            if kind.tag == "noot.al":
+                delen.append(ws(self.inline(kind)))
+            elif kind.tag == "noot.lijst":
+                delen.extend(self.nootlijst(kind))
+        tekst = " ".join(d for d in delen if d)
         if not nr or not tekst:
             raise ConversionError("Een BWB-noot mist zijn nummer of zijn tekst.")
         if not re.fullmatch(r"[0-9A-Za-z]+", nr):
             raise ConversionError(f"Een BWB-nootnummer dat geen label kan zijn ({nr!r}).")
-        label = f"{self.huidige_bijlage}-{nr}" if self.huidige_bijlage else nr
+        # In een bijlage het label van de reeks (`nootreeksen()`, T7-F2); in de wettekst het nummer.
+        label = self.noot_labels.get(el) or (f"{self.huidige_bijlage}-{nr}" if self.huidige_bijlage else nr)
         self.definieer(label)
         self.noten.append((label, tekst))
         self.u.wachtend.append((label, tekst))
         return f"[^{label}]"
+
+    def nootlijst(self, el) -> list[str]:
+        """De items van een `<noot.lijst>`: elk item met zijn teken, in bronvolgorde.
+
+        De Regeling publieke gezondheid zet in een noot een opsomming (`<noot.lijst><noot.li><li.nr>a.
+        </li.nr><noot.al>…`); tot kb WP-123 een weigering (T14-F3 in haar test 14). Besluit 8.5 van haar
+        plan 8: de items zijn tekst van de noot, met hun teken. Op dezelfde regel als de rest van de
+        noottekst: geen document in de kennisbank heeft een meerregelige noot, en haar
+        witruimtenormalisatie maakt van vier spaties aan een regelbegin één, zodat een vervolgregel
+        niet meer bij de noot hoort (gemeten op haar fixture). Een geneste lijst of een ander kind is niet
+        gemeten en blijft een weigering.
+        """
+        items = []
+        for li in el:
+            if li.tag != "noot.li":
+                raise ConversionError(f"Een BWB-<noot.lijst> bevat <{li.tag}>; alleen noot.li is gemeten.")
+            onbekend = [k.tag for k in li if k.tag not in ("li.nr", "noot.al")]
+            if onbekend:
+                raise ConversionError(f"Een BWB-<noot.li> bevat {onbekend}; alleen li.nr en noot.al zijn gemeten.")
+            teken = ws("".join(li.find("li.nr").itertext())) if li.find("li.nr") is not None else ""
+            tekst = " ".join(t for t in (ws(self.inline(al)) for al in li.findall("noot.al")) if t)
+            items.append(" ".join(d for d in (teken, tekst) if d))
+        return items
+
+    def nootreeksen(self, el, voorvoegsel: str) -> None:
+        """Lees vooraf de labels van de noten van bijlage `el`, met de reeks die opnieuw bij 1 begint.
+
+        Binnen een bijlage tellen de `<noot>`-noten en de `sup`-noten (een `<al>` die met `<sup>n</sup>`
+        begint, de vorm van `nootdefinitie()`) samen één reeks, in documentvolgorde. Komt er een 1 terwijl
+        de lopende reeks al een 1 heeft, dan begint de volgende reeks: `annex-1-1`, `annex-1-n2-1`,
+        `annex-1-n3-1`, dezelfde vorm als de kennisbank bij EUR-Lex (haar `conventions.md` §5; besluit 8.5
+        van haar plan 8, kb WP-123). De VIRBI 2013 (BWBR0033507) laat haar `sup`-noten per tabel opnieuw
+        bij 1 beginnen, het Kavelbesluit V Hollandse Kust (noord) (BWBR0052410) zet een doorlopende
+        `<noot>`-reeks naast `sup`-noten die per tabel bij 1 beginnen; tot dan weigerde `definieer()` beide
+        (T7-F2, drie keer in haar tests). Een ander herhaald nummer opent geen reeks en blijft een weigering.
+
+        Een `sup`-marker hoort bij de eerstvolgende definitie met zijn nummer in de bijlage (de marker staat
+        in de tabel, de definitie eronder), en anders bij de laatste ervoor; zonder definitie met dat
+        nummer is hij een macht (T6-F3, kb WP-43). Met één reeks zijn dat de labels van daarvoor.
+        """
+        self.noot_labels, self.definitie_labels, self.sup_labels = {}, {}, {}
+        volgorde = {e: i for i, e in enumerate(el.iter())}
+        reeks, gebruikt = 1, set()
+        definities = []
+        for e in el.iter():
+            if e.tag == "noot":
+                nummer = ws("".join(e.find("noot.nr").itertext())) if e.find("noot.nr") is not None else ""
+            elif (e.tag == "al" and not (e.text or "").strip() and len(e) and e[0].tag == "sup"
+                  and ws("".join(e[0].itertext())).isdigit()):
+                nummer = ws("".join(e[0].itertext()))
+            else:
+                continue
+            if nummer in gebruikt and nummer == "1":
+                reeks, gebruikt = reeks + 1, set()
+            gebruikt.add(nummer)
+            label = f"{voorvoegsel}-{nummer}" if reeks == 1 else f"{voorvoegsel}-n{reeks}-{nummer}"
+            if e.tag == "noot":
+                self.noot_labels[e] = label
+            else:
+                self.definitie_labels[e] = label
+                self.sup_labels[e[0]] = label
+                definities.append((volgorde[e], nummer, label))
+        for sup in el.iter("sup"):
+            nummer = ws("".join(sup.itertext()))
+            if sup in self.sup_labels or not nummer.isdigit():
+                continue
+            zelfde = [(plek, label) for plek, n, label in definities if n == nummer]
+            na = [label for plek, label in zelfde if plek > volgorde[sup]]
+            voor = [label for plek, label in zelfde if plek < volgorde[sup]]
+            if na or voor:
+                self.sup_labels[sup] = na[0] if na else voor[-1]
 
     def definieer(self, label: str) -> None:
         # Twee definities onder één label: welke een marker bedoelt, is dan niet meer te
@@ -419,13 +502,20 @@ class BwbOmzetter:
                 # In een circulaire staat de lopende tekst in een omhulsel zonder eigen
                 # tekst (`<tekst><al>…</al><lijst>…</lijst></tekst>`); de kinderen tellen.
                 self.container_inhoud(kind, niveau, pad, nog_niet)
-            elif kind.tag == "structuurtekst" and (el.get("status") or "").lower() == "nogniet":
+            elif kind.tag == "structuurtekst":
                 # Het Besluit digitale overheid (BWBR0037987) geeft zijn nog niet geldende
                 # Hoofdstuk 5 geen artikel, alleen `<structuurtekst><al><redactie>Dit onderdeel
                 # is nog niet inwerking getreden</redactie></al></structuurtekst>`: brontekst,
-                # dus hij staat onder de kop (`[Red: …]`). Gemeten alleen hier: in de 125
-                # BWB-bronnen van de kennisbank komt `<structuurtekst>` nergens anders voor, en
-                # elders blijft het een onbekend blok.
+                # dus hij staat onder de kop (`[Red: …]`). De wetten-BES zetten onder een
+                # vervallen hoofdstuk, titel, afdeling of paragraaf `<structuurtekst><al>
+                # [Vervallen]</al></structuurtekst>`, soms gevolgd door artikelen; tot kb WP-123
+                # was dat `blok:structuurtekst` (T14-F1 in haar test 14, 18 wetten-BES buiten haar
+                # sets). Besluit 8.5 van haar plan 8: dezelfde vorm, een alinea zonder anker op
+                # haar plaats. Een structuurtekst die zelf vervallen is, is niet gemeten.
+                if (kind.get("status") or "").lower() == "vervallen":
+                    raise ConversionError(
+                        "Een BWB-<structuurtekst> met status vervallen; die vorm is niet gemeten, "
+                        "omzetting geweigerd.")
                 for deel in kind:
                     if deel.tag not in OVERSLAAN:
                         self.inhoud(deel, basis="", prefix_noot="")
@@ -464,15 +554,19 @@ class BwbOmzetter:
             # `<label>Artikel 11a</label>` en `<label>Artikel 59i</label>`. Het
             # nummer staat dan in het label; zonder deze lezing gaf de omzetter
             # twee keer het lege anker `art-` uit en weigerde de kennisbank het
-            # zijbestand (T3-F3, kb WP-20). Een andere vorm zonder nummer is
-            # niet gemeten en blijft een weigering: een artikel zonder anker
-            # bestaat niet.
+            # zijbestand (T3-F3, kb WP-20).
             m = re.fullmatch(r"(Artikel)\s+(\S+)", label)
-            if not m:
+            if m:
+                label, nr = m.group(1), m.group(2)
+            elif re.match(r"(?i)artikel\b", label):
+                # `<label>Artikel</label>` zonder nummer: hier ontbreekt een nummer, en
+                # een kop `Artikel` zonder anker zou dat verbergen.
                 raise ConversionError(
                     f"Een artikel zonder <nr> en zonder nummer in het label ({label!r}); "
                     "omzetting geweigerd.")
-            label, nr = m.group(1), m.group(2)
+            else:
+                self.artikel_zonder_nummer(el, niveau, label, titel, nog_niet)
+                return
         naam = nummer_anker(nr)
         anker = f"{pad['annex']}-art-{naam}" if pad.get("annex") else f"art-{naam}"
         regel = self.kopregel(label or "Artikel", nr, titel, nr_eerst)
@@ -520,6 +614,41 @@ class BwbOmzetter:
                 continue
             else:
                 self.inhoud(kind, basis=anker, prefix_noot="", teller=teller)
+
+    def artikel_zonder_nummer(self, el, niveau: int, label: str, titel: str, nog_niet: bool) -> None:
+        """Een artikel dat de bron geen nummer geeft: een kop zonder eenheid, met zijn tekst.
+
+        De Grondwet (BWBR0001840) opent met `<artikel><kop><titel>Algemene bepaling</titel></kop>`, het
+        Wetboek van Strafvordering (BWBR0001903) zet in Boek 5 `<kop><label>(Gereserveerd)</label>`. Tot kb
+        WP-123 weigerde de omzetter beide ("een artikel zonder anker bestaat niet"), en ontbraken beide wetten
+        in de kennisbank (K6 R1/R2, T14-F2). Besluit 8.5 van haar plan 8: een kop zonder anker, met de tekst
+        van de bron; de kennisbank verzint geen adres. Een genummerd lid of onderdeel heeft dan geen ouder
+        voor zijn anker, en een vervallen of nog niet geldend artikel zonder nummer is niet gemeten: beide
+        blijven een weigering.
+        """
+        status = (el.get("status") or "").lower()
+        if nog_niet or status in ("vervallen", "nogniet"):
+            raise ConversionError(
+                f"Een artikel zonder nummer ({label or titel!r}) dat vervallen is of nog niet geldt; die vorm "
+                "is niet gemeten, omzetting geweigerd.")
+        regel = self.kopregel(label, "", titel)
+        if not regel:
+            raise ConversionError("Een artikel zonder nummer, label en titel; omzetting geweigerd.")
+        for kind in el:
+            genummerd = (kind.tag == "lid" and kind.find("lidnr") is not None) or (
+                kind.tag == "lijst" and any(li.find("li.nr") is not None
+                                            and not ONGEMARKEERD.match(ws(li.findtext("li.nr") or ""))
+                                            for li in kind.findall("li")))
+            if genummerd:
+                raise ConversionError(
+                    f"Een artikel zonder nummer ({regel!r}) met een genummerd lid of onderdeel: dat zou een "
+                    "anker zonder ouder krijgen; omzetting geweigerd.")
+        self.u.blok(f"{'#' * min(niveau, 6)} {regel}")
+        self.subtitel(el)
+        for kind in el:
+            if kind.tag == "kop" or kind.tag in OVERSLAAN:
+                continue
+            self.inhoud(kind, basis="", prefix_noot="")
 
     def lid_nog_niet(self, el, lidnr: str) -> None:
         """Behoud nog niet geldende tekst zonder nieuwe citeerankers te creëren.
@@ -656,8 +785,9 @@ class BwbOmzetter:
         rest = (el[0].tail or "") + "".join(
             self.inline_el(kind, prefix_noot) + (kind.tail or "") for kind in list(el)[1:]
         )
-        self.definieer(f"{prefix_noot}{cijfer}")
-        self.u.blok(f"[^{prefix_noot}{cijfer}]: {ws(rest)}")
+        label = self.definitie_labels.get(el) or f"{prefix_noot}{cijfer}"
+        self.definieer(label)
+        self.u.blok(f"[^{label}]: {ws(rest)}")
         return True
 
     def divisie(self, el, basis: str, prefix_noot: str,
@@ -786,11 +916,9 @@ class BwbOmzetter:
         self.huidige_bijlage = anker
         prefix = f"{anker}-"
         # Dezelfde vorm als `nootdefinitie()`: een `<al>` zonder tekst vooraf die met
-        # `<sup>n</sup>` begint. Een `<sup>` met dat nummer in deze bijlage is een marker.
-        self.sup_definities = {
-            f"{prefix}{ws(''.join(al[0].itertext()))}" for al in el.iter("al")
-            if not (al.text or "").strip() and len(al) and al[0].tag == "sup"
-            and ws("".join(al[0].itertext())).isdigit()}
+        # `<sup>n</sup>` begint. Een `<sup>` met dat nummer in deze bijlage is een marker, met het
+        # label van zijn reeks (`nootreeksen()`, kb WP-123).
+        self.nootreeksen(el, anker)
         regel = self.kopregel(label or "Bijlage", nr, titel, nr_eerst)
         self.u.blok(f"{'#' * niveau} {regel}")
         self.u.eenheid(anker, "bijlage", regel)
@@ -808,7 +936,7 @@ class BwbOmzetter:
             else:
                 self.inhoud(kind, basis=anker, prefix_noot=prefix)
         self.huidige_bijlage = ""
-        self.sup_definities = set()
+        self.noot_labels, self.definitie_labels, self.sup_labels = {}, {}, {}
 
 
 def omzetten(data: bytes | str) -> tuple[str, list, dict, dict]:

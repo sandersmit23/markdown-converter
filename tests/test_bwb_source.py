@@ -271,11 +271,17 @@ def test_structuurtekst_met_redactie_staat_onder_de_kop_in_plaats_van_de_melding
             "### Artikel 1. Reikwijdte\n\n[Nog niet in werking getreden.]") in markdown
 
 
-def test_structuurtekst_buiten_een_nog_niet_geldend_element_is_een_weigering():
-    """Niet gemeten: in de 125 BWB-bronnen van de kennisbank alleen onder een nog niet geldend hoofdstuk."""
+def test_structuurtekst_buiten_een_nog_niet_geldend_element_is_een_alinea_onder_de_kop():
+    """Tot kb WP-123 een weigering ("niet gemeten: in de 125 BWB-bronnen van de kennisbank alleen onder een nog
+    niet geldend hoofdstuk"). De wetten-BES zetten haar onder een geldend of vervallen element (T14-F1, 18 wetten
+    buiten de sets van de kennisbank); besluit 8.5 van haar plan 8 geeft haar dezelfde vorm: een alinea zonder
+    eenheid op haar plaats."""
     binnen = b"<structuurtekst><al>Tekst.</al></structuurtekst>"
-    with pytest.raises(ConversionError, match="structuurtekst"):
-        wetten.bwb_xml.omzetten(in_container(toestand(), "hoofdstuk", "goed", binnen=binnen))
+    markdown, eenheden, onbekend, _ = wetten.bwb_xml.omzetten(
+        in_container(toestand(), "hoofdstuk", "goed", binnen=binnen))
+    assert not onbekend
+    assert "## Hoofdstuk 1. Eerste\n\nTekst.\n\n### Artikel 1. Reikwijdte" in markdown
+    assert [e.anker for e in eenheden] == ["hfd-1", "art-1", "art-1-1"]
 
 
 @pytest.mark.parametrize("tag", ["deel", "titeldeel", "boek"])
@@ -896,3 +902,167 @@ def test_plaatje_met_een_onbekend_kind_in_een_lijstitem_blijft_een_weigering():
     xml = wet('<lijst><li><li.nr>a.</li.nr><plaatje><legenda>rood</legenda></plaatje></li></lijst>')
     with pytest.raises(ConversionError, match="plaatje:legenda"):
         wetten.bwb_xml.omzetten(xml)
+
+
+# ---------- nootreeksen, nootlijst, artikel zonder nummer en structuurtekst (kb WP-123) ----------
+
+def test_noten_artikel_zonder_nummer_en_structuurtekst_geven_de_raw_vorm_van_de_kennisbank():
+    """De fixture van kb WP-123 (`tests/fixtures/bwb/README.md`, besluit 8.5 van haar plan 8): de kennisbank las
+    deze raw-vorm eerst met haar eigen planner, poort en bronlezing (0 bevindingen); de omzetter schrijft haar byte
+    voor byte, en zijn eenheden zijn precies de ankers die haar lezers vereisen (geen op `Algemene bepaling`,
+    `(Gereserveerd)` of `[Vervallen]`)."""
+    markdown, eenheden, onbekend, extra = wetten.bwb_xml.omzetten(
+        (FIXTURE_BWB / "noten-artikel-zonder-nummer.xml").read_bytes())
+    assert markdown == (FIXTURE_BWB / "noten-artikel-zonder-nummer.md").read_text(encoding="utf-8")
+    assert not onbekend
+    assert [e.anker for e in eenheden] == [
+        "hfd-1", "art-1", "art-2", "art-2-1", "art-2-2", "hfd-2", "hfd-3", "afd-3-1", "art-3", "art-4", "annex-1"]
+    assert extra["noten"] == 2
+
+
+def bijlage_met(inhoud: str, nr: str = "3") -> str:
+    return f"<bijlage><kop><label>Bijlage</label><nr>{nr}</nr></kop>{inhoud}</bijlage>"
+
+
+def tabel(*cellen: str) -> str:
+    rijen = "".join(f'<row><entry colname="c1"><al>{c}</al></entry></row>' for c in cellen)
+    return (f'<table><tgroup cols="1"><colspec colname="c1"/><thead><row><entry colname="c1"><al>Kop</al></entry>'
+            f"</row></thead><tbody>{rijen}</tbody></tgroup></table>")
+
+
+def test_sup_noten_die_per_tabel_opnieuw_bij_1_beginnen_tellen_de_reeks():
+    """De VIRBI 2013 (BWBR0033507): de `sup`-noten beginnen per tabel opnieuw bij 1, en `definieer()` weigerde
+    het tweede `annex-3-1` (T7-F2, drie keer in de tests van de kennisbank). Een marker hoort bij de eerstvolgende
+    definitie met zijn nummer."""
+    bijlage = bijlage_met(
+        f"{tabel('pas<sup>1</sup>', 'sleutel<sup>2</sup>')}<al><sup>1</sup> Een pas.</al><al><sup>2</sup> Een sleutel.</al>"
+        f"{tabel('kluis<sup>1</sup>')}<al><sup>1</sup> Een kluis.</al>")
+    markdown, _, onbekend, _ = wetten.bwb_xml.omzetten(wet(bijlage=bijlage))
+    assert not onbekend
+    assert "| pas[^annex-3-1] |\n| sleutel[^annex-3-2] |" in markdown
+    assert "| kluis[^annex-3-n2-1] |" in markdown
+    assert "[^annex-3-1]: Een pas.\n\n[^annex-3-2]: Een sleutel." in markdown
+    assert "[^annex-3-n2-1]: Een kluis." in markdown
+
+
+def test_noot_en_sup_noot_tellen_in_dezelfde_reeks():
+    """Het Kavelbesluit V (BWBR0052410): een doorlopende `<noot>`-reeks naast `sup`-noten die bij 1 beginnen; de
+    `<noot>` 1 en de `sup`-noot 1 kregen allebei `annex-2-1`. Besluit 8.5: één reeks, in bronvolgorde."""
+    noot = '<noot type="voet"><noot.nr>{n}</noot.nr><noot.al>Bron {n}.</noot.al></noot>'
+    bijlage = bijlage_met(
+        f"<al>Eerst{noot.format(n=1)} en{noot.format(n=2)}.</al>{tabel('waarde<sup>1</sup>')}"
+        f"<al><sup>1</sup> Gemeten in 2026.</al><al>Daarna{noot.format(n=3)}.</al>", nr="2")
+    markdown, _, _, extra = wetten.bwb_xml.omzetten(wet(bijlage=bijlage))
+    assert "Eerst[^annex-2-1] en[^annex-2-2]." in markdown
+    assert "| waarde[^annex-2-n2-1] |" in markdown
+    assert "[^annex-2-n2-1]: Gemeten in 2026." in markdown
+    assert "Daarna[^annex-2-n2-3]." in markdown and "[^annex-2-n2-3]: Bron 3." in markdown
+    assert extra["noten"] == 3
+
+
+def test_een_herhaald_nummer_dat_geen_1_is_blijft_een_weigering():
+    """Alleen een nieuwe 1 opent een reeks; een tweede 2 is een dubbele definitie, en welke een marker dan bedoelt,
+    is niet te zeggen."""
+    bijlage = bijlage_met("<al>x<sup>1</sup> y<sup>2</sup></al><al><sup>1</sup> Een.</al><al><sup>2</sup> Twee.</al>"
+                          "<al><sup>2</sup> Nog eens twee.</al>")
+    with pytest.raises(ConversionError, match="hetzelfde label"):
+        wetten.bwb_xml.omzetten(wet(bijlage=bijlage))
+
+
+def test_een_marker_na_zijn_definitie_hoort_bij_de_laatste_ervoor():
+    bijlage = bijlage_met("<al><sup>1</sup> Een.</al><al>Zie ook<sup>1</sup>.</al>")
+    markdown, _, _, _ = wetten.bwb_xml.omzetten(wet(bijlage=bijlage))
+    assert "Zie ook[^annex-3-1]." in markdown
+
+
+def test_een_noot_met_een_lijst_houdt_de_items_met_hun_teken_op_de_definitieregel():
+    """De Regeling publieke gezondheid zet een `<noot.lijst>` in een noot (T14-F3); de omzetter mat alleen
+    `noot.nr` en `noot.al`. Besluit 8.5: de items zijn tekst van de noot, met hun teken, in bronvolgorde. Op de
+    definitieregel: de kennisbank heeft geen meerregelige noot, en haar V8 maakt van een vervolgregel een losse
+    regel."""
+    noot = ('<noot type="voet"><noot.nr>4</noot.nr><noot.al>Bedoeld zijn:</noot.al><noot.lijst>'
+            '<noot.li><li.nr>a.</li.nr><noot.al>de GGD;</noot.al></noot.li>'
+            '<noot.li><noot.al>de RIVM,</noot.al><noot.al>met de regio.</noot.al></noot.li></noot.lijst>'
+            "<noot.al>Zie de toelichting.</noot.al></noot>")
+    markdown, _, onbekend, _ = wetten.bwb_xml.omzetten(wet(f"<al>De diensten{noot} werken samen.</al>"))
+    assert not onbekend
+    assert "De diensten[^4] werken samen.\n\n[^4]: Bedoeld zijn: a. de GGD; de RIVM, met de regio. Zie de toelichting." \
+        in markdown
+
+
+@pytest.mark.parametrize("lijst, melding", [
+    ("<noot.lijst><noot.li><noot.lijst><noot.li><noot.al>diep</noot.al></noot.li></noot.lijst></noot.li></noot.lijst>",
+     "noot.li"),
+    ("<noot.lijst><noot.al>los</noot.al></noot.lijst>", "noot.lijst"),
+    ("<naamlijst><naam>x</naam></naamlijst>", "naamlijst"),
+])
+def test_een_niet_gemeten_vorm_in_een_noot_blijft_een_weigering(lijst, melding):
+    noot = f'<noot type="voet"><noot.nr>1</noot.nr><noot.al>Zie:</noot.al>{lijst}</noot>'
+    with pytest.raises(ConversionError, match=melding):
+        wetten.bwb_xml.omzetten(wet(f"<al>Tekst{noot}.</al>"))
+
+
+def test_een_artikel_zonder_nummer_is_een_kop_zonder_eenheid_met_zijn_tekst():
+    """De Grondwet (BWBR0001840): `<artikel><kop><titel>Algemene bepaling</titel></kop>` vóór hoofdstuk 1, en het
+    Wetboek van Strafvordering (BWBR0001903): `<label>(Gereserveerd)</label>` met een lege titel en alinea. Tot kb
+    WP-123 een weigering (K6 R1/R2, T14-F2); besluit 8.5: een kop zonder anker."""
+    xml = wet().replace(
+        b"<regeling-tekst>",
+        b'<regeling-tekst><artikel status="goed"><kop><titel>Algemene bepaling</titel></kop>'
+        b"<al>Deze regeling waarborgt iets.</al></artikel>"
+        b'<artikel label="(Gereserveerd)" status="goed"><kop><label>(Gereserveerd)</label><titel/></kop><al/></artikel>')
+    markdown, eenheden, onbekend, _ = wetten.bwb_xml.omzetten(xml)
+    assert not onbekend
+    assert "\n## Algemene bepaling\n\nDeze regeling waarborgt iets.\n\n## (Gereserveerd)\n\n## Artikel 1\n" in markdown
+    assert [e.anker for e in eenheden] == ["art-1"]
+
+
+@pytest.mark.parametrize("inhoud, melding", [
+    ("<lid><lidnr>1</lidnr><al>Een lid.</al></lid>", "genummerd lid"),
+    ("<lijst><li><li.nr>a.</li.nr><al>een onderdeel</al></li></lijst>", "genummerd lid"),
+])
+def test_een_artikel_zonder_nummer_met_een_genummerd_lid_of_onderdeel_blijft_een_weigering(inhoud, melding):
+    xml = wet().replace(b"<regeling-tekst>", f"<regeling-tekst><artikel><kop><titel>Slot</titel></kop>{inhoud}"
+                                             "</artikel>".encode())
+    with pytest.raises(ConversionError, match=melding):
+        wetten.bwb_xml.omzetten(xml)
+
+
+@pytest.mark.parametrize("status", ["vervallen", "nogniet"])
+def test_een_vervallen_of_nog_niet_geldend_artikel_zonder_nummer_blijft_een_weigering(status):
+    xml = wet().replace(b"<regeling-tekst>", f'<regeling-tekst><artikel status="{status}" inwerking="2020-01-01">'
+                                             "<kop><titel>Slot</titel></kop><al>x</al></artikel>".encode())
+    with pytest.raises(ConversionError, match="niet gemeten"):
+        wetten.bwb_xml.omzetten(xml)
+
+
+def test_een_artikel_zonder_nummer_label_en_titel_blijft_een_weigering():
+    xml = wet().replace(b"<regeling-tekst>", b"<regeling-tekst><artikel><kop/><al>x</al></artikel>")
+    with pytest.raises(ConversionError, match="zonder nummer, label en titel"):
+        wetten.bwb_xml.omzetten(xml)
+
+
+def test_structuurtekst_onder_een_structuurelement_is_een_alinea_zonder_eenheid():
+    """De wetten-BES: `<structuurtekst><al>[Vervallen]</al></structuurtekst>` onder een vervallen hoofdstuk of
+    afdeling, soms gevolgd door artikelen. Tot kb WP-123 `blok:structuurtekst` (T14-F1)."""
+    xml = wet().replace(
+        b"<regeling-tekst>",
+        b'<regeling-tekst><hoofdstuk status="goed"><kop><label>Hoofdstuk</label><nr>1</nr><titel>Weg</titel></kop>'
+        b'<structuurtekst status="goed"><al>[Vervallen]</al></structuurtekst></hoofdstuk>'
+        b'<hoofdstuk status="goed"><kop><label>Hoofdstuk</label><nr>2</nr><titel>Rest</titel></kop>'
+        b'<structuurtekst status="goed"><al>[vervallen]</al></structuurtekst>').replace(
+        b"</regeling-tekst>", b"</hoofdstuk></regeling-tekst>")
+    markdown, eenheden, onbekend, _ = wetten.bwb_xml.omzetten(xml)
+    assert not onbekend
+    assert "## Hoofdstuk 1. Weg\n\n[Vervallen]\n\n## Hoofdstuk 2. Rest\n\n[vervallen]\n\n### Artikel 1\n" in markdown
+    assert [e.anker for e in eenheden] == ["hfd-1", "hfd-2", "art-1"]
+
+
+def test_structuurtekst_met_status_vervallen_of_een_onbekend_kind_blijft_een_weigering():
+    basis = ('<regeling-tekst><hoofdstuk status="goed"><kop><label>Hoofdstuk</label><nr>1</nr></kop>'
+             '<structuurtekst status="{status}">{inhoud}</structuurtekst></hoofdstuk>')
+    for status, inhoud, melding in (("vervallen", "<al>[Vervallen]</al>", "niet gemeten"),
+                                    ("goed", "<kader>x</kader>", "inhoud:kader")):
+        xml = wet().replace(b"<regeling-tekst>", basis.format(status=status, inhoud=inhoud).encode())
+        with pytest.raises(ConversionError, match=melding):
+            wetten.bwb_xml.omzetten(xml)

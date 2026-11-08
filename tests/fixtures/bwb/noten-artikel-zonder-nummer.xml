@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<toestand bwb-id="BWBR9999123" inwerkingtreding="2026-11-01">
+<wetgeving>
+<intitule>Regeling van de Minister van Proeven van 1 november 2026, nr. 123, houdende regels over proefpassen en de opslag van proefmateriaal (Proefregeling passen en opslag)</intitule>
+<citeertitel>Proefregeling passen en opslag</citeertitel>
+<regeling>
+<aanhef>
+<considerans><considerans.al>Gelet op artikel 3 van de <extref doc="jci1.3:c:BWBR9999001">Proefwet</extref>;</considerans.al></considerans>
+<afkondiging><al>Besluit:</al></afkondiging>
+</aanhef>
+<regeling-tekst>
+<artikel bwb-ng-variabel-deel="/Artikel" status="goed"><kop><titel status="officieel">Algemene bepaling</titel></kop>
+<al>Deze regeling waarborgt de veilige omgang met proefmateriaal.</al>
+</artikel>
+<hoofdstuk bwb-ng-variabel-deel="/Hoofdstuk1" status="goed"><kop><label>Hoofdstuk</label><nr>1</nr><titel>Passen</titel></kop>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk1/Artikel1" status="goed"><kop><label>Artikel</label><nr>1</nr><titel>Aanvraag</titel></kop>
+<al>Een aanvraag voor een proefpas bevat de gegevens die de minister vraagt.<noot type="voet" id="N1"><noot.nr>1</noot.nr><noot.al>De minister vraagt in elk geval:</noot.al><noot.lijst><noot.li><li.nr>a.</li.nr><noot.al>de naam van de aanvrager;</noot.al></noot.li><noot.li><li.nr>b.</li.nr><noot.al>het adres van de aanvrager.</noot.al></noot.li></noot.lijst><noot.al>Andere gegevens zijn vrijwillig.</noot.al></noot></al>
+</artikel>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk1/Artikel2" status="goed"><kop><label>Artikel</label><nr>2</nr><titel>Geldigheid</titel></kop>
+<lid><lidnr>1</lidnr><al>Een proefpas is een jaar geldig.</al></lid>
+<lid><lidnr>2</lidnr><al>De minister kan de geldigheid verlengen.</al></lid>
+</artikel>
+</hoofdstuk>
+<hoofdstuk bwb-ng-variabel-deel="/Hoofdstuk2" status="goed"><kop><label>Hoofdstuk</label><nr>2</nr><titel>Toezicht</titel></kop>
+<structuurtekst bwb-ng-variabel-deel="/Hoofdstuk2/Structuurtekst" status="goed"><al>[Vervallen]</al></structuurtekst>
+</hoofdstuk>
+<hoofdstuk bwb-ng-variabel-deel="/Hoofdstuk3" status="goed"><kop><label>Hoofdstuk</label><nr>3</nr><titel>Opslag</titel></kop>
+<afdeling bwb-ng-variabel-deel="/Hoofdstuk3/Afdeling1" status="goed"><kop><label>Afdeling</label><nr>1</nr><titel>Kluizen</titel></kop>
+<structuurtekst bwb-ng-variabel-deel="/Hoofdstuk3/Afdeling1/Structuurtekst" status="goed"><al>[vervallen]</al></structuurtekst>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk3/Afdeling1/Artikel3" status="goed"><kop><label>Artikel</label><nr>3</nr><titel>Kluis</titel></kop>
+<al>Proefmateriaal wordt opgeslagen in een kluis die voldoet aan bijlage 1.</al>
+</artikel>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk3/Afdeling1/Artikel" label="(Gereserveerd)" status="goed"><kop><label>(Gereserveerd)</label><titel status="officieel"/></kop>
+<al/>
+</artikel>
+<artikel bwb-ng-variabel-deel="/Hoofdstuk3/Afdeling1/Artikel4" status="goed"><kop><label>Artikel</label><nr>4</nr><titel>Citeertitel</titel></kop>
+<al>Deze regeling wordt aangehaald als: Proefregeling passen en opslag.</al>
+</artikel>
+</afdeling>
+</hoofdstuk>
+</regeling-tekst>
+<regeling-sluiting>
+<al>Deze regeling zal met de toelichting in de Staatscourant worden geplaatst.</al>
+<ondertekening><functie>De Minister van Proeven,</functie> <naam><voornaam>A.</voornaam> <achternaam>Proef</achternaam></naam></ondertekening>
+</regeling-sluiting>
+<bijlage bwb-ng-variabel-deel="/Bijlage1" status="goed"><kop><label>Bijlage</label><nr>1</nr><titel>Normen voor toegang en opslag</titel></kop>
+<divisie bwb-ng-variabel-deel="/Bijlage1/Divisie1" status="goed"><kop><titel>Toegang</titel></kop>
+<table><tgroup cols="2"><colspec colname="c1"/><colspec colname="c2"/>
+<thead><row><entry colname="c1"><al>Middel</al></entry><entry colname="c2"><al>Eis</al></entry></row></thead>
+<tbody><row><entry colname="c1"><al>Proefpas<sup>1</sup></al></entry><entry colname="c2"><al>verplicht</al></entry></row>
+<row><entry colname="c1"><al>Sleutel<sup>2</sup></al></entry><entry colname="c2"><al>verplicht<sup>2</sup></al></entry></row></tbody>
+</tgroup></table>
+<al><sup>1</sup> Een pas met foto en nummer.</al>
+<al><sup>2</sup> Een sleutel met een eigen nummer.</al>
+</divisie>
+<divisie bwb-ng-variabel-deel="/Bijlage1/Divisie2" status="goed"><kop><titel>Opslag</titel></kop>
+<table><tgroup cols="2"><colspec colname="c1"/><colspec colname="c2"/>
+<thead><row><entry colname="c1"><al>Middel</al></entry><entry colname="c2"><al>Eis</al></entry></row></thead>
+<tbody><row><entry colname="c1"><al>Kluis<sup>1</sup></al></entry><entry colname="c2"><al>verplicht</al></entry></row></tbody>
+</tgroup></table>
+<al><sup>1</sup> Een kluis met een cijferslot.</al>
+<al>Een opslagplaats wordt jaarlijks gekeurd.<noot type="voet" id="N2"><noot.nr>1</noot.nr><noot.al>De keuring volgt de proefnorm voor opslag.</noot.al></noot></al>
+</divisie>
+</bijlage>
+</regeling>
+</wetgeving>
+</toestand>
