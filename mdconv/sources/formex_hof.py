@@ -224,6 +224,7 @@ class _Omzetter:
         self.opmaak = 0
         self.gegenereerd: Counter = Counter()
         self.afbeeldingen_weggelaten: list[dict] = []
+        self.in_cel = False
 
     # -- inline ---------------------------------------------------------
 
@@ -328,6 +329,17 @@ class _Omzetter:
         if (naam == "P" and len(el) == 1 and _kort(el[0]) == "INCL.ELEMENT"
                 and not (el.text or "").strip() and not (el[0].tail or "").strip()):
             return self.afbeelding(el[0])
+        if self.in_cel and naam == "BR":
+            # Een regelafbreking in een tabelcel (`<CELL><BR/>Omschrijving</CELL>` in
+            # 62023CJ0129, kb WP-120 B4): een woordgrens, zoals een blok in een cel; de
+            # cel wordt één regel met een spatie (`tabel`). `_plat` leest `BR` net zo.
+            # Buiten een cel is een `BR` niet gemeten en blijft een weigering.
+            return []
+        if self.in_cel and naam == "INCL.ELEMENT":
+            # Een afbeelding als enige inhoud van een cel (twee prijsetiketten in
+            # 62023CJ0330, kb WP-120 B4): zoals een afbeelding als eigen alinea niet
+            # overgenomen maar vastgelegd (`image-omitted`); de cel blijft leeg.
+            return self.afbeelding(el)
         if naam in ("INCL.ELEMENT",):
             raise _fout("het document bevat een afbeelding (INCL.ELEMENT) die niet als eigen "
                         "alinea staat; de keten heeft daar geen route voor en stil weglaten "
@@ -596,7 +608,18 @@ class _Omzetter:
             for cel in rij:
                 if _kort(cel) != "CELL":
                     raise _fout(f"onverwacht element in een tabelrij ({_kort(cel)})")
-                tekst = _norm(" ".join(self.gemengd(cel)))
+                beelden = [k for k in cel.iter() if _kort(k) == "INCL.ELEMENT"]
+                if beelden and not (len(cel) == 1 and cel[0] is beelden[0]
+                                    and not (cel.text or "").strip() and not (cel[0].tail or "").strip()):
+                    # Alleen een afbeelding als enige inhoud van de cel is gemeten; naast
+                    # tekst zou ze stil midden in een zin wegvallen.
+                    raise _fout("een afbeelding (INCL.ELEMENT) in een tabelcel naast andere inhoud; "
+                                "alleen een afbeelding als enige inhoud van de cel is gemeten")
+                self.in_cel = True
+                try:
+                    tekst = _norm(" ".join(self.gemengd(cel)))
+                finally:
+                    self.in_cel = False
                 kol = cel.get("COL")
                 rs, cs = int(cel.get("ROWSPAN") or 1), int(cel.get("COLSPAN") or 1)
                 if rs * cs > 1:

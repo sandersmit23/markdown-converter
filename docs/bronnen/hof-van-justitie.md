@@ -20,5 +20,8 @@ architectuur en verwijst hiernaartoe.
   zelfcontrole is dezelfde als bij `hudoc_docx`. Weigeringen: `CONCLUSION`, `OPINION`,
   `JUDGMENT.NP`, `CASE`, `REPORT.HEARING`, `SUMMARY.*`, een zip met meer dan één XML of met een
   bestand dat de uitspraak niet als afbeelding aanroept (een aangeroepen TIFF wordt weggelaten
-  met een melding), een onbekende aanhalingscode en `DLIST`. Gemeten op 143 Cellar-zips: 73 arresten of
+  met een melding), een onbekende aanhalingscode en `DLIST`. In een tabelcel is `<BR/>` een
+  woordgrens (een spatie in de cel) en een afbeelding als enige inhoud van de cel een lege cel met
+  dezelfde melding (62023CJ0129, 62023CJ0330; kb WP-120 B4); buiten een cel blijft `BR` een
+  weigering, en een afbeelding naast tekst in een cel ook. Gemeten op 143 Cellar-zips: 73 arresten of
   beschikkingen in één XML, 71 omgezet.

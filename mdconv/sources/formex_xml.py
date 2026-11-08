@@ -177,8 +177,10 @@ ONDERDEELKOP = re.compile(
 # die de meetlat kent: 902 keer in 12 documenten (23 september 2026), `1.` (136),
 # `1.1.` (567), `1.1.1.` (180), `2)` (17, rijbewijsrichtlijn 2025/2205) en `d)` (2,
 # 32012L0027). Een andere vorm is niet gemeten: `(1)` zou in het profiel als
-# overweging of noot lezen.
-ONDERDEELNUMMER = re.compile(r"\d{1,3}(?:\.\d{1,3})*\.|\d{1,3}\)|[a-z]\)")
+# overweging of noot lezen. Sinds kb WP-120 (B2) ook een meerledig nummer zonder
+# slotpunt: bijlage II bij 32020L0012 nummert `3.1.` onder de matroos en `3.1` onder de
+# schipper, in dezelfde reeks vormen; een kaal `3` blijft niet gemeten.
+ONDERDEELNUMMER = re.compile(r"\d{1,3}(?:\.\d{1,3})*\.|\d{1,3}(?:\.\d{1,3})+|\d{1,3}\)|[a-z]\)")
 
 
 def _xml_fout(boodschap: str, exc: Exception | None = None) -> ConversionError:
@@ -719,6 +721,38 @@ def basis_preambule(basis: bytes, base_celex: str | None) -> tuple[ET.Element | 
     return preambule, None
 
 
+# Witruimte en leestekens die aan de rand van een nadruk buiten de sterretjes horen (kb WP-120 B3).
+_RAND_NADRUK = re.compile(r"([\s,.;:!?]*)")
+# Alleen een leesteken maakt een nadruk aan die kant los van het woord ernaast; een spatie aan de
+# rand liet de omzetter al zonder opmaak (zo blijft de uitvoer daar gelijk aan die van vóór WP-120).
+_RAND_NADRUK_TEKEN = re.compile(r"[,.;:!?]")
+
+
+def _enige_nadruk(el) -> str:
+    """`BOLD` of `ITALIC` als alle tekst van `el` in één `HT` van die soort staat, anders ''."""
+    if el is None or ws(el.text or "") or len(el) != 1:
+        return ""
+    ht = el[0]
+    if ht.tag != "HT" or ws(ht.tail or "") or any(k.tag == "HT" for k in ht.iter() if k is not ht):
+        return ""
+    soort = (ht.get("TYPE") or "").upper()
+    return soort if soort in ("BOLD", "ITALIC") else ""
+
+
+def _alleen_genummerde_titel(groep) -> bool:
+    """Een `GR.SEQ` met als enige inhoud een titel `TI/NP` (nummer en tekst), zonder tekst ertussen."""
+    if groep.tag != "GR.SEQ" or ws(groep.text or "") or [k.tag for k in groep] != ["TITLE"]:
+        return False
+    titel = groep[0]
+    if ws(titel.text or "") or ws(titel.tail or "") or [k.tag for k in titel] != ["TI"]:
+        return False
+    ti = titel[0]
+    np = ti.find("NP")
+    return (np is not None and len(ti) == 1 and not ws(ti.text or "") and not ws(np.tail or "")
+            and np.find("NO.P") is not None and np.find("TXT") is not None
+            and [k.tag for k in np] == ["NO.P", "TXT"])
+
+
 class FormexOmzetter:
     def __init__(self) -> None:
         self.u = Uitvoer()
@@ -745,6 +779,7 @@ class FormexOmzetter:
         self.citaatdiepte = 0                       # >0 binnen een QUOT.S die inline loopt
         self.citaattabellen: list[list[str] | None] = []  # blokken per TABELMARKER, None = geschreven
         self.strepen = 0                            # geschreven plekken van een geschrapt element
+        self.in_overweging = False                  # binnen een CONSID (een groepstitel is daar een tussenkop)
 
     def onbekend(self, context: str, el) -> None:
         """Weiger onbekende inhoud; een leeg technisch element mag verdwijnen."""
@@ -791,7 +826,11 @@ class FormexOmzetter:
             # (`cyberbeveiliging<HT TYPE="BOLD">s</HT>certificering`). Met
             # sterretjes ertussen valt het woord in twee tokens uiteen en vindt de
             # kennisbank het niet meer terug; de opmaak gaat dan liever verloren.
-            vast = vorige.isalnum() or volgende.isalnum()
+            # Begint de nadruk zelf met een leesteken, dan zit ze links niet vast
+            # (kb WP-120 B3: `Thunberg<HT>, Acer palmatum</HT>`).
+            binnen_tekst = "".join(kind.itertext()) if kind.tag == "HT" else "x"
+            vast = (vorige.isalnum() and not _RAND_NADRUK_TEKEN.match(binnen_tekst[:1] or "x")) \
+                or volgende.isalnum()
             stuk = self.inline_el(kind, vast_aan_woord=vast)
             erna = (kind.tail or "") or (kinderen[index + 1].text or "" if index + 1 < len(kinderen) else "")
             self.let_op_aaneen(kind, stuk, "".join(delen), erna)
@@ -816,11 +855,22 @@ class FormexOmzetter:
                 return binnen.upper()
             if vast_aan_woord or soort in self.zonder:
                 return binnen
-            if soort == "ITALIC":
-                return f"*{ws(binnen)}*"
-            if soort == "BOLD":
-                return f"**{ws(binnen)}**"
-            return binnen
+            teken = {"ITALIC": "*", "BOLD": "**"}.get(soort)
+            if teken is None:
+                return binnen
+            # Een leesteken vooraan de nadruk gaat buiten de markering (kb WP-120 B3):
+            # `Thunberg<HT TYPE="ITALIC">, Acer palmatum</HT>` in 32020R1213 werd
+            # `Thunberg*, Acer palmatum*`. Een `*` na een letter en vóór een komma opent in
+            # Markdown geen nadruk, dus de sterretjes stonden letterlijk in de tekst; de
+            # kennisbank weigerde op haar tabelbewijs (T2). Achteraan is een leesteken
+            # binnen de markering geldige Markdown (`*a.*`, 540 keer `**n.e.g.**` in de
+            # meetlat); dat blijft zoals het was, want de raw-vorm verandert alleen waar
+            # ze stuk is (regel 2 van AGENTS.md).
+            m = _RAND_NADRUK.match(binnen)
+            voor, kern = m.group(1), binnen[m.end():]
+            if not ws(kern):
+                return binnen
+            return f"{voor}{teken}{ws(kern)}{teken}"
         if tag == "FT" and (el.get("TYPE") or "").upper() == "NUMBER":
             # Het Publicatieblad groepeert duizendtallen met een harde spatie;
             # de XML bewaart alleen de cijfers.
@@ -1387,6 +1437,13 @@ class FormexOmzetter:
                 self.overweging(kind)
             elif kind.tag == "DIV.CONSID":
                 self.overwegingengroep(kind)
+            elif kind.tag == "TBL":
+                # Een tabel tussen de overwegingen, buiten een overweging (`Tabel 5` onder
+                # kop 5.1.1 van de antidumpingverordening 32023R1404, kb WP-120 B1). Tot dan
+                # `overwegingen:TBL`. Dezelfde vorm als een tabel in een overweging: titel als
+                # alinea, de tabel, het onderschrift eronder. Ze hoort bij geen overweging,
+                # dus ze krijgt geen eenheid, net als een kop van de groep.
+                self.tabel(kind)
             elif kind.tag in METADATA:
                 continue
             else:
@@ -1397,26 +1454,40 @@ class FormexOmzetter:
 
         Dezelfde vorm als de kop van een bijlageonderdeel (`A.   “Algemeen”`):
         het nummer uit `NO.P`, drie harde spaties, de tekst uit `TXT`. Met een
-        gewone spatie leest Markdown `1. INLEIDING` als lijstitem. Vet en cursief
-        (156 en 82 van de 330 koppen in de meetlat) zijn typografie, net als in
-        een hoofdstukkop. Vijf koppen hebben geen nummer maar een `P`
-        (`Referentiestelsel` in 2017/2116); die komen er kaal in.
+        gewone spatie leest Markdown `1. INLEIDING` als lijstitem. Vijf koppen
+        hebben geen nummer maar een `P` (`Referentiestelsel` in 2017/2116); die
+        komen er kaal in.
+
+        Sinds kb WP-120 (besluit 10.7 van haar plan 10) draagt de regel de nadruk van
+        de bron: is de tekst van de kop helemaal vet of helemaal cursief (156 en 82 van
+        de 330 koppen in de meetlat), dan staat de hele regel tussen `**` of `*`
+        (`**1.   PROCEDURE**`). Tot dan was de kop platte tekst en las hij als een
+        gewone alinea tussen de overwegingen (32023D1431, testrun van november 2026).
+        Gemengde of geen opmaak blijft kaal: halve sterretjes midden in de regel
+        zouden een woord van zijn opmaak scheiden.
         """
         for ti in titel:
             if ti.tag != "TI":
                 self.onbekend("overwegingenkop", ti)
                 continue
-            # Eén doorloop door `kop_tekst`, zodat de tekst in bronvolgorde staat
-            # en niets wegvalt; alleen de scheiding achter het nummer wordt de
-            # vorm van het Publicatieblad. Het nummer wordt gelezen zonder
-            # `inline()`, want een tweede doorloop zou een noot twee keer tellen.
-            regel = self.kop_tekst(ti)
-            np = ti.find("NP")
-            nr = ws("".join(np.find("NO.P").itertext())) if np is not None and np.find("NO.P") is not None else ""
-            if nr and regel.startswith(f"{nr} "):
-                regel = f"{nr}{NBSP * 3}{regel[len(nr) + 1:]}"
-            if regel:
-                self.u.blok(regel)
+            self.kopregel(ti)
+
+    def kopregel(self, ti) -> None:
+        """Eén regel van een overwegingenkop, met het nummer in de vorm van het Publicatieblad."""
+        # Eén doorloop door `kop_tekst`, zodat de tekst in bronvolgorde staat
+        # en niets wegvalt; alleen de scheiding achter het nummer wordt de
+        # vorm van het Publicatieblad. Het nummer wordt gelezen zonder
+        # `inline()`, want een tweede doorloop zou een noot twee keer tellen.
+        regel = self.kop_tekst(ti)
+        np = ti.find("NP")
+        nr = ws("".join(np.find("NO.P").itertext())) if np is not None and np.find("NO.P") is not None else ""
+        if nr and regel.startswith(f"{nr} "):
+            regel = f"{nr}{NBSP * 3}{regel[len(nr) + 1:]}"
+        if regel:
+            teken = {"BOLD": "**", "ITALIC": "*"}.get(_enige_nadruk(np.find("TXT") if np is not None else ti), "")
+            if teken and "*" in regel:
+                teken = ""   # een noot of sterretje in de kop: liever kaal dan half gemarkeerd
+            self.u.blok(f"{teken}{regel}{teken}")
 
     def preambule_van_basis(self) -> None:
         """De considerans van de basishandeling, in de vorm die de HTML-route ook schrijft.
@@ -1442,6 +1513,13 @@ class FormexOmzetter:
         self.metadata["recitals_from"] = self.metadata.get("base_celex")
 
     def overweging(self, el) -> None:
+        eerder, self.in_overweging = self.in_overweging, True
+        try:
+            self._overweging(el)
+        finally:
+            self.in_overweging = eerder
+
+    def _overweging(self, el) -> None:
         np = el.find("NP")
         doel = np if np is not None else el
         nr = ws(self.inline(doel.find("NO.P"))) if doel.find("NO.P") is not None else ""
@@ -2164,6 +2242,16 @@ class FormexOmzetter:
                 if regel:
                     self.u.blok(regel)
             return
+        if self.in_overweging and _alleen_genummerde_titel(el):
+            # Een groep met alleen een genummerde titel aan het eind van een overweging
+            # (`7.4.   Belang van leveranciers …` in overweging 258 van de
+            # antidumpingverordening 32026R1929, kb WP-120 B1): het Publicatieblad zet
+            # hem als kop boven de volgende overweging, zoals de koppen van
+            # `DIV.CONSID` ernaast. In de considerans heeft zo'n kop geen anker, dus hij
+            # wordt een kopregel als die van de groep; in een bijlage blijft een genummerde
+            # titel een weigering (hij is daar een onderdeel met een anker).
+            self.kopregel(el.find("TITLE/TI"))
+            return
         for kind in el:
             if kind.tag == "TITLE":
                 if ws(kind.text or "") or any(ws(deel.tail or "") for deel in kind):
@@ -2688,12 +2776,15 @@ class FormexOmzetter:
         ti = self.kop_tekst(titel.find("TI")) if titel is not None and titel.find("TI") is not None else "BIJLAGE"
         sti = (self.kop_tekst(titel.find("STI"), "ITALIC")
                if titel is not None and titel.find("STI") is not None else "")
-        m = re.match(r"BIJLAGE\s+(\S+)", ti, re.I)
+        m = re.match(r"BIJLAGE\s+(\S+)(?:\s+(" + "|".join(LATIJN) + r")\b)?", ti, re.I)
         # Een ongenummerde bijlage krijgt haar volgnummer met een `o` ervoor. Als
         # `annex-<volgnummer>` botste ze met een genummerde: het SCC-besluit
         # (2021/914) heeft een `BIJLAGE`, een `AANHANGSEL` en daarna `BIJLAGE I`
         # en `II`, en weigerde op "dubbele structurele ankers: annex-1".
-        anker = (f"annex-{nummer_anker(m.group(1), romeins_omrekenen=True)}" if m
+        # `BIJLAGE I bis` (02022R2309-20251215, kb WP-120 B2) is een andere bijlage dan I;
+        # alleen `I` lezen gaf twee keer `annex-1`. Dezelfde vorm als `art-49bis` en
+        # `hfd-9bis` (`divisie_anker`; kb-conventies §2).
+        anker = (f"annex-{nummer_anker(m.group(1), romeins_omrekenen=True)}{(m.group(2) or '').lower()}" if m
                  else f"annex-o{self.bijlagen}")
         self.u.blok(f"## {ti.replace(' ', NBSP)}")
         if sti:

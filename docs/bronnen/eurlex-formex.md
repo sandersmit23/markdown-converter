@@ -18,6 +18,10 @@ architectuur en verwijst hiernaartoe.
   considerans, met `Herkomst.recitals_reason` en een waarschuwing. Vet of cursief dat aan een
   woord vastzit (`cyberbeveiliging<HT TYPE="BOLD">s</HT>certificering`) wordt niet geschreven,
   en opmaak in een kop (`HOOFDSTUK II` cursief) ook niet: beide braken de herkenning in de kb.
+  Begint de nadruk met een leesteken (`Thunberg<HT TYPE="ITALIC">, Acer palmatum</HT>`, 32020R1213),
+  dan staat dat leesteken buiten de sterretjes (`Thunberg, *Acer palmatum*`): `*, ` na een letter
+  opent in Markdown geen nadruk, en de sterretjes stonden letterlijk in de tekst (kb WP-120 B3). Een
+  leesteken achteraan blijft binnen (`**n.e.g.**`): dat is geldige Markdown.
   Bij een geconsolideerde tekst leest de omzetter de vindplaats en de wijzigingen uit de bron,
   niet uit de tekst: `CONS.DOC/FAM.COMP/BIB.DATA/BIB.INSTANCE.CONS` geeft `oj_reference` van de
   basishandeling in dezelfde vorm als bij een Publicatieblad-handeling (`PB L 151 van 7.6.2019,
@@ -105,7 +109,8 @@ architectuur en verwijst hiernaartoe.
   onderdeel naast andere onderdelen krijgt zijn plaats (`s2`); een ongenummerde bijlage is
   `annex-o<volgnummer>`, zodat ze niet botst met `BIJLAGE I` (SCC's). Een tweede reeks losse
   punten in één blok draagt `al<k>`, net als in het profiel, en een DLIST telt mee als tweede
-  opsomming in een lid. `HOOFDSTUK IX bis` is `hfd-9bis`. Een **herhaald hoofdstuknummer**
+  opsomming in een lid. `HOOFDSTUK IX bis` is `hfd-9bis`, en `BIJLAGE I bis` is `annex-1bis`
+  (02022R2309-20251215, kb WP-120 B2; tot dan een tweede `annex-1`). Een **herhaald hoofdstuknummer**
   (twee keer `HOOFDSTUK III` in de Nederlandse DORA, 32022R2554, waar het Publicatieblad VII
   heeft) krijgt dezelfde regel als de dubbele `d)` in de AVG: `dubbele_divisie()` geeft het
   tweede zijn volgnummer (`hfd-3-2`, en dat loopt door in het ankerpad van zijn afdelingen),
@@ -187,9 +192,15 @@ architectuur en verwijst hiernaartoe.
   Een **groep overwegingen** (`DIV.CONSID`: adequaatheids-, staatssteun- en antidumpingbesluiten,
   tot zes niveaus genest in 2021/1772) blijft overwegingen. Elke `CONSID` wordt `(n)` plus één
   spatie met haar `rec-`-eenheid, in bronvolgorde en over de groepen heen doorgenummerd. De kop
-  van de groep wordt een gewone alinea: `NO.P` plus drie harde spaties plus de tekst zonder vet of
-  cursief (`1. INLEIDING`, `2.1 Toepassingsgebied`), de vorm van een bijlageonderdeelkop; een kop
-  zonder nummer (`Referentiestelsel`, 2017/2116) staat er kaal. Geen `##`, want in de considerans
+  van de groep wordt een gewone alinea: `NO.P` plus drie harde spaties plus de tekst, de vorm van
+  een bijlageonderdeelkop. Sinds kb WP-120 (besluit 10.7 van haar plan 10) draagt die regel de
+  nadruk van de bron: helemaal vet wordt `**1.   PROCEDURE**`, helemaal cursief `*2.1   Toepassingsgebied*`;
+  gemengde of geen opmaak blijft kaal, en een kop zonder nummer (`Referentiestelsel`, 2017/2116) ook.
+  Een **tabel direct in een groep** (`Tabel 5` onder kop 5.1.1 van 32023R1404) wordt een tabel
+  zoals in een overweging, zonder eenheid. Een **groep met alleen een genummerde titel aan het eind
+  van een overweging** (`7.4.` in overweging 258 van 32026R1929) is de kop boven de volgende
+  overweging en wordt een kopregel in dezelfde vorm; in een bijlage blijft een genummerde titel in een
+  alinea een weigering (`blok-in-alinea:NP`). Geen `##`, want in de considerans
   plant het profiel alleen overwegingen (`plan_recitals`), en een andere kop zou daar een
   kopniveau zonder anker zijn. Een **adresblok** (`ADDR.S`) wordt één alinea per P; in een
   tabelcel is het een blok als een P, met de regels door een spatie gescheiden (dezelfde celtekst
@@ -233,7 +244,8 @@ architectuur en verwijst hiernaartoe.
   regel, zoals bij een lid. Tot 23 september 2026 schreef die tak het nummer twee keer (`3. 3.`,
   ook bij artikel 6, lid 3 van Rome II). Het nummer is ook het ankersegment. Alleen de gemeten
   vormen gaan door: `1.`, `1.1.`, `1.1.1.`, `2)` en `d)` (`ONDERDEELNUMMER`), als eerste kind,
-  zonder kop ernaast en met een P of LIST erna. Een andere vorm (`(1)` leest in het profiel als
+  zonder kop ernaast en met een P of LIST erna. Sinds kb WP-120 (B2) ook een meerledig nummer
+  zonder slotpunt (`3.1`, naast `3.1.` in bijlage II bij 32020L0012); een kaal `3` niet. Een andere vorm (`(1)` leest in het profiel als
   overweging), een tabel of inclusie als eerste inhoud, of een nummer zonder tekst blijft een
   weigering. Het nummer van een onderdeelkop wordt uit de bron gelezen (`_plat_bron`), niet met
   een tweede `inline()`: die schreef een noot in de kop dubbel (32013R0503, 32023L2225,

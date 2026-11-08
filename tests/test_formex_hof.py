@@ -476,3 +476,45 @@ def test_gevoegde_zaken_komen_uit_de_eerste_alinea_als_het_blok_er_een_noemt(ini
     _, meta = formex_hof.omzetten(arrest_zip(xml), "62026CJ0001")
     assert meta["zaaknummers"] == zaken
     assert (meta["zaaknummers_melding"] is None) if melding is None else (melding in meta["zaaknummers_melding"])
+
+
+# ------------------------------------------------------------------ een tabelcel (kb WP-120 B4, J1)
+
+def _met_tabel(cellen: str, beelden: tuple[str, ...] = ()) -> bytes:
+    """62023CJ0129 en 62023CJ0330: een tabel achter de tekst van een genummerd punt."""
+    xml = ARREST.replace("<TXT>Het Hof overweegt als volgt.</TXT>",
+                         '<TXT>Het Hof overweegt als volgt.</TXT><TBL NO.SEQ="0001" COLS="2"><CORPUS>'
+                         + cellen + "</CORPUS></TBL>")
+    return zipje(("ECR_62026CJ0001_NL_01.xml", xml), *[(b, b"II*\x00") for b in beelden])
+
+
+def test_een_regelafbreking_in_een_tabelcel_is_een_spatie():
+    """62023CJ0129: `<CELL><BR/>Omschrijving</CELL>`; tot WP-120 `BR` zonder eigen behandeling."""
+    markdown, _ = formex_hof.omzetten(_met_tabel(
+        '<ROW><CELL COL="1"><BR/>Omschrijving</CELL><CELL COL="2">Eerste<BR/>regel</CELL></ROW>'))
+    assert "| Omschrijving | Eerste regel |" in markdown
+
+
+def test_een_regelafbreking_buiten_een_cel_blijft_een_weigering():
+    xml = ARREST.replace("<TXT>Het Hof overweegt als volgt.</TXT>", "<TXT>Het Hof overweegt<BR/>als volgt.</TXT>")
+    with pytest.raises(ConversionError, match="BR"):
+        formex_hof.omzetten(arrest_zip(xml))
+
+
+def test_een_afbeelding_als_enige_inhoud_van_een_cel_wordt_weggelaten_met_een_melding():
+    """62023CJ0330: twee prijsetiketten als TIFF in een tabel, met `(bananen)` en `(ananas)` eronder."""
+    tweede = BEELD.replace("_01.tif", "_02.tif")
+    markdown, meta = formex_hof.omzetten(_met_tabel(
+        f'<ROW><CELL COL="1"><INCL.ELEMENT FILEREF="{BEELD}" TYPE="TIFF"/></CELL>'
+        f'<CELL COL="2"><INCL.ELEMENT FILEREF="{tweede}" TYPE="TIFF"/></CELL></ROW>'
+        '<ROW><CELL COL="1">(bananen)</CELL><CELL COL="2">(ananas)</CELL></ROW>', (BEELD, tweede)))
+    assert "|  |  |\n| (bananen) | (ananas) |" in markdown
+    assert meta["afbeeldingen_weggelaten"] == [{"fileref": BEELD, "format": "TIFF"},
+                                               {"fileref": tweede, "format": "TIFF"}]
+
+
+def test_een_afbeelding_naast_tekst_in_een_cel_blijft_een_weigering():
+    with pytest.raises(ConversionError, match="enige inhoud van de cel"):
+        formex_hof.omzetten(_met_tabel(
+            f'<ROW><CELL COL="1">Zie <INCL.ELEMENT FILEREF="{BEELD}" TYPE="TIFF"/></CELL>'
+            '<CELL COL="2">tekst</CELL></ROW>', (BEELD,)))

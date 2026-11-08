@@ -1,5 +1,5 @@
 {
- "commit": "b44464f+wijzigingen",
+ "commit": "320fd71+wijzigingen",
  "documenten": {
   "02002L0058-20091219": {
    "melding": null,
@@ -338,9 +338,9 @@
    "oorzaak": null,
    "route": "wetgeving",
    "sectie": "geconsolideerd",
-   "sha256": "ee97cfddb3e923f34230049abee981084f85823ad505c0c996b3ca67d3792578",
+   "sha256": "e2de020ab3ee9a77593a2929c88445093ac753ff56aa65be8c303fd5c7bd9bb5",
    "status": "ok",
-   "tekens": 335283,
+   "tekens": 335271,
    "waarschuwingen": [
     "Overwegingen en aanhef zijn overgenomen uit de oorspronkelijke handeling (CELEX:32022R2554); de geconsolideerde tekst op EUR-Lex bevat deze niet."
    ]
@@ -1355,9 +1355,9 @@
    "oorzaak": null,
    "route": "wetgeving",
    "sectie": "steekproef-wetgeving",
-   "sha256": "04af476bfedb674415e209f3e5ced22824c40fd0424c14eefa0ada4c8678bb65",
+   "sha256": "7e592cd31975cb2277e9f45dde6b78d80de4ae882de8b7f439e66eeb18646ce3",
    "status": "ok",
-   "tekens": 55724,
+   "tekens": 55784,
    "waarschuwingen": []
   },
   "32016D2393": {
@@ -1365,9 +1365,9 @@
    "oorzaak": null,
    "route": "wetgeving",
    "sectie": "steekproef-wetgeving",
-   "sha256": "199e7253cdfb7bb03de00ea984294110b8efe474f52ef0754c091fafdc6c503c",
+   "sha256": "36ecda3b9c3dc048c62beb91961868c811db1ac2d965bcdaa7afe3eb1147e15a",
    "status": "ok",
-   "tekens": 105721,
+   "tekens": 105799,
    "waarschuwingen": []
   },
   "32016L0011": {
@@ -1497,9 +1497,9 @@
    "oorzaak": null,
    "route": "wetgeving",
    "sectie": "steekproef-wetgeving",
-   "sha256": "69717dabcca484c6628998c52f860a189a736c55a576937ba1f563cd1cf84576",
+   "sha256": "ada6913f050cceb833c0a56af49ff8ab8dd9415028f3f101dbc14b3cd3daca79",
    "status": "ok",
-   "tekens": 106524,
+   "tekens": 106616,
    "waarschuwingen": []
   },
   "32017L0433": {
@@ -1527,9 +1527,9 @@
    "oorzaak": null,
    "route": "wetgeving",
    "sectie": "steekproef-wetgeving",
-   "sha256": "2d4ae409de852cc605406549daace2d4153a4fa1c875c6893f18de8f8ce92524",
+   "sha256": "84c9328753b2ac38a08d6ae6891dbdb287373ddda5b2a6eb72418aafd938a259",
    "status": "ok",
-   "tekens": 34553,
+   "tekens": 34601,
    "waarschuwingen": []
   },
   "32017R0745": {
@@ -1561,9 +1561,9 @@
    "oorzaak": null,
    "route": "wetgeving",
    "sectie": "steekproef-wetgeving",
-   "sha256": "49d70d2da979d9e5030c76c8e439078ab57945bbec62a899fe3422f7db0329be",
+   "sha256": "ed76aa272817c649337c426a64ad21d971577f7382b5f51c390dfaf18071932d",
    "status": "ok",
-   "tekens": 22502,
+   "tekens": 22514,
    "waarschuwingen": []
   },
   "32017R1782": {
@@ -1621,7 +1621,7 @@
    "oorzaak": null,
    "route": "wetgeving",
    "sectie": "steekproef-wetgeving",
-   "sha256": "9c0a7a3857ff772dd2596e7cbb5fd732da74e049a41595ba8684beb8cd7dc405",
+   "sha256": "8b0517dd818e392b496042082f811ea8dc4cd619c7d52efad1bc258290ab1d76",
    "status": "ok",
    "tekens": 14720,
    "waarschuwingen": []
@@ -2021,9 +2021,9 @@
    "oorzaak": null,
    "route": "wetgeving",
    "sectie": "belangrijk",
-   "sha256": "5a36b3832cec221c378b824b11eae82482f5f052a66f7b2846c96c8597bec4ee",
+   "sha256": "09b086e107ebb47052bb3bf66b01d090643d47988e28a1ada2df666d8df69348",
    "status": "ok",
-   "tekens": 419961,
+   "tekens": 420077,
    "waarschuwingen": []
   },
   "32021L1159": {
@@ -2257,9 +2257,9 @@
    "oorzaak": null,
    "route": "wetgeving",
    "sectie": "belangrijk",
-   "sha256": "e7adc11605636ebd34b41c6ada6e57d498a3f0c9e569318f3e7d129e38ac1621",
+   "sha256": "1a7f2032bedb5aba284288661c66ce24c31644785c54dc5e04f8559dc54a063c",
    "status": "ok",
-   "tekens": 335412,
+   "tekens": 335400,
    "waarschuwingen": [
     "De Formex-bron gebruikt de kop HOOFDSTUK III 2 keer; het 2e kreeg de structuureenheid hfd-3-2. De kop en de tekst zijn ongewijzigd overgenomen."
    ]
@@ -2279,9 +2279,9 @@
    "oorzaak": null,
    "route": "wetgeving",
    "sectie": "testset",
-   "sha256": "19d5ceadff17b157b78ebed50ee2157bbf29688285fdc2e6bc04ec20c7ffa04e",
+   "sha256": "64ed47725a89698b15a071384e37885e0b9c89df3b87ec1d8da2a17ade502e69",
    "status": "ok",
-   "tekens": 534900,
+   "tekens": 534964,
    "waarschuwingen": [
     "11 afbeeldingen uit de Formex-bron niet overgenomen (TIFF); de tekst eromheen staat er wel: L_2023231NL.01019602.tif, L_2023231NL.01019701.tif, L_2023231NL.01019802.tif, L_2023231NL.01020601.tif, L_2023231NL.01020702.tif en 6 meer.",
     "De Formex-bron schrijft 2 keer een nootverwijzing vast aan het woord erna ('voor', 'genoemde'); de omzetter zet er een spatie tussen, want de bron leest een noot als woordgrens."
@@ -2752,9 +2752,9 @@
    "oorzaak": null,
    "route": "wetgeving",
    "sectie": "steekproef-wetgeving",
-   "sha256": "c5da52a07f29f8cf1010eb3aba344f5cdb4704ba194eeea9fd04068688b48ca4",
+   "sha256": "b899c91a8e42ad1a956696ca44d3798244245d57a2dcba2804b9d20cd5dcdae4",
    "status": "ok",
-   "tekens": 145146,
+   "tekens": 145338,
    "waarschuwingen": []
   },
   "32025R2339": {
@@ -2873,7 +2873,7 @@
    ]
   },
   "62010CO0084": {
-   "melding": "Voor 62010CO0084 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62010CO0084 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -2883,7 +2883,7 @@
    "waarschuwingen": []
   },
   "62010TJ0420": {
-   "melding": "Voor 62010TJ0420 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62010TJ0420 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -2917,7 +2917,7 @@
    ]
   },
   "62011CO0200": {
-   "melding": "Voor 62011CO0200 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62011CO0200 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -2927,7 +2927,7 @@
    "waarschuwingen": []
   },
   "62011TJ0413": {
-   "melding": "Voor 62011TJ0413 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62011TJ0413 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -2961,7 +2961,7 @@
    ]
   },
   "62012CO0581": {
-   "melding": "Voor 62012CO0581 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62012CO0581 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3008,7 +3008,7 @@
    ]
   },
   "62013CO0683": {
-   "melding": "Voor 62013CO0683 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62013CO0683 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3018,7 +3018,7 @@
    "waarschuwingen": []
   },
   "62013TJ0026": {
-   "melding": "Voor 62013TJ0026 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62013TJ0026 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3052,7 +3052,7 @@
    ]
   },
   "62014CO0507": {
-   "melding": "Voor 62014CO0507 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62014CO0507 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3062,7 +3062,7 @@
    "waarschuwingen": []
   },
   "62014TJ0446": {
-   "melding": "Voor 62014TJ0446 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62014TJ0446 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3096,7 +3096,7 @@
    ]
   },
   "62015CO0426": {
-   "melding": "Voor 62015CO0426 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62015CO0426 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3142,7 +3142,7 @@
    ]
   },
   "62016CO0406": {
-   "melding": "Voor 62016CO0406 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62016CO0406 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3188,7 +3188,7 @@
    ]
   },
   "62017CO0424": {
-   "melding": "Voor 62017CO0424 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62017CO0424 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3198,7 +3198,7 @@
    "waarschuwingen": []
   },
   "62017TJ0460": {
-   "melding": "Voor 62017TJ0460 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62017TJ0460 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3232,7 +3232,7 @@
    ]
   },
   "62018CO0023": {
-   "melding": "Voor 62018CO0023 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62018CO0023 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3242,7 +3242,7 @@
    "waarschuwingen": []
   },
   "62018TJ0299": {
-   "melding": "Voor 62018TJ0299 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62018TJ0299 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3288,7 +3288,7 @@
    ]
   },
   "62019CO0325": {
-   "melding": "Voor 62019CO0325 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62019CO0325 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3298,7 +3298,7 @@
    "waarschuwingen": []
   },
   "62019TJ0085": {
-   "melding": "Voor 62019TJ0085 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62019TJ0085 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3332,7 +3332,7 @@
    ]
   },
   "62020CO0676": {
-   "melding": "Voor 62020CO0676 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62020CO0676 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3342,7 +3342,7 @@
    "waarschuwingen": []
   },
   "62020TJ0225": {
-   "melding": "Voor 62020TJ0225 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62020TJ0225 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3376,7 +3376,7 @@
    ]
   },
   "62021CO0611": {
-   "melding": "Voor 62021CO0611 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62021CO0611 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3386,7 +3386,7 @@
    "waarschuwingen": []
   },
   "62021TJ0280": {
-   "melding": "Voor 62021TJ0280 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62021TJ0280 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3408,7 +3408,7 @@
    ]
   },
   "62022CJ0259": {
-   "melding": "Voor 62022CJ0259 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62022CJ0259 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3418,7 +3418,7 @@
    "waarschuwingen": []
   },
   "62022CO0690": {
-   "melding": "Voor 62022CO0690 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62022CO0690 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3428,7 +3428,7 @@
    "waarschuwingen": []
   },
   "62022TJ0108": {
-   "melding": "Voor 62022TJ0108 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62022TJ0108 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3438,7 +3438,7 @@
    "waarschuwingen": []
   },
   "62023CJ0209": {
-   "melding": "Voor 62023CJ0209 is geen Formex-manifestatie in de Cellar (HTTP 406) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62023CJ0209 is geen Formex-manifestatie in de Cellar (HTTP 406) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3460,7 +3460,7 @@
    ]
   },
   "62023CJ0789": {
-   "melding": "Voor 62023CJ0789 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62023CJ0789 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3470,7 +3470,7 @@
    "waarschuwingen": []
   },
   "62023CO0768": {
-   "melding": "Voor 62023CO0768 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62023CO0768 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3480,7 +3480,7 @@
    "waarschuwingen": []
   },
   "62023TJ0295": {
-   "melding": "Voor 62023TJ0295 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62023TJ0295 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3526,7 +3526,7 @@
    ]
   },
   "62024CO0860": {
-   "melding": "Voor 62024CO0860 is geen Formex-manifestatie in de Cellar (HTTP 406) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62024CO0860 is geen Formex-manifestatie in de Cellar (HTTP 406) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3536,7 +3536,7 @@
    "waarschuwingen": []
   },
   "62024TJ0541": {
-   "melding": "Voor 62024TJ0541 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62024TJ0541 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3546,7 +3546,7 @@
    "waarschuwingen": []
   },
   "62025CJ0234": {
-   "melding": "Voor 62025CJ0234 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62025CJ0234 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3556,7 +3556,7 @@
    "waarschuwingen": []
   },
   "62025CJ0467": {
-   "melding": "Voor 62025CJ0467 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62025CJ0467 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3566,7 +3566,7 @@
    "waarschuwingen": []
   },
   "62025CO0561": {
-   "melding": "Voor 62025CO0561 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Een arrest van de laatste dagen of weken staat er nog niet; probeer het later opnieuw. Er is geen terugval op HTML.",
+   "melding": "Voor 62025CO0561 is geen Formex-manifestatie in de Cellar (HTTP 404) in taal NL. Welke vormen de Cellar wél heeft, was niet na te gaan (de metadata gaven geen antwoord). Er is geen terugval op HTML of op een andere taal.",
    "oorzaak": null,
    "route": "hof",
    "sectie": "steekproef-hof",
@@ -3672,6 +3672,6 @@
    ]
   }
  },
- "gemeten": "2026-09-30 09:20",
+ "gemeten": "2026-11-08 17:36",
  "taal": "NL"
 }

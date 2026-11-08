@@ -491,14 +491,65 @@ def met_overwegingen_in_groepen(groepen: bytes = OVERWEGINGEN_IN_GROEPEN) -> byt
 
 
 def test_overwegingen_in_een_groep_blijven_overwegingen_en_hun_kop_wordt_een_alinea():
-    """Tot 23 september 2026 weigerde `DIV.CONSID` 9 van de 347 documenten in de meetlat."""
+    """Tot 23 september 2026 weigerde `DIV.CONSID` 9 van de 347 documenten in de meetlat.
+
+    Sinds kb WP-120 (besluit 10.7 van haar plan 10) draagt de kopregel de nadruk van de bron:
+    helemaal vet wordt `**…**`, helemaal cursief `*…*`, een kop zonder opmaak blijft kaal.
+    Tot dan stond hier `1.   INLEIDING` zonder sterretjes (bewust gewijzigd)."""
     markdown, eenheden, _, _ = formex_xml.omzetten(met_overwegingen_in_groepen())
-    assert ("Overwegende hetgeen volgt:\n\n1.   INLEIDING\n\n(1) Eerste overweging.\n\n"
-            "2.   BEOORDELING\n\n2.1   Toepassingsgebied\n\n(2) Tweede overweging."
+    assert ("Overwegende hetgeen volgt:\n\n**1.   INLEIDING**\n\n(1) Eerste overweging.\n\n"
+            "**2.   BEOORDELING**\n\n*2.1   Toepassingsgebied*\n\n(2) Tweede overweging."
             "\n\nReferentiestelsel\n\n(3) Derde overweging.\n") in markdown
-    assert "**" not in markdown and "*Toepassingsgebied*" not in markdown
     assert [e.anker for e in eenheden if e.soort == "overweging"] == ["rec-1", "rec-2", "rec-3"]
     assert {e.soort for e in eenheden} == {"overweging", "divisie", "artikel", "lid", "onderdeel"}
+
+
+def test_een_kop_met_gemengde_opmaak_blijft_kaal():
+    """Halve sterretjes midden in een kopregel zouden een woord van zijn opmaak scheiden."""
+    groepen = OVERWEGINGEN_IN_GROEPEN.replace(
+        b'<TXT><HT TYPE="BOLD">INLEIDING</HT></TXT>', b'<TXT><HT TYPE="BOLD">INLEIDING</HT> en doel</TXT>', 1)
+    markdown = formex_xml.omzetten(met_overwegingen_in_groepen(groepen))[0]
+    assert "\n\n1.   INLEIDING en doel\n\n" in markdown
+
+
+_TABEL = (b'<TBL COLS="2"><TITLE><TI><P><HT TYPE="ITALIC">Tabel 5</HT></P></TI></TITLE>'
+          b'<GR.NOTES><GR.ANNOTATION><ANNOTATION><P><HT TYPE="ITALIC">Bron:</HT> klager.</P></ANNOTATION>'
+          b'</GR.ANNOTATION></GR.NOTES><CORPUS><ROW><CELL COL="1">Verbruik</CELL><CELL COL="2">'
+          b'<FT TYPE="NUMBER">3493180</FT></CELL></ROW></CORPUS></TBL>')
+
+
+def test_een_tabel_tussen_de_overwegingen_wordt_een_tabel_zonder_eenheid():
+    """32023R1404 (kb WP-120 B1): `Tabel 5` direct in een `DIV.CONSID`, onder kop 5.1.1; tot dan
+    `overwegingen:TBL`. Titel als alinea, de tabel, het onderschrift eronder."""
+    groepen = OVERWEGINGEN_IN_GROEPEN.replace(
+        b"<CONSID><NP><NO.P>(2)</NO.P>", _TABEL + b"<CONSID><NP><NO.P>(2)</NO.P>", 1)
+    markdown, eenheden, onbekend, _ = formex_xml.omzetten(met_overwegingen_in_groepen(groepen))
+    assert onbekend == {}
+    assert ("*2.1   Toepassingsgebied*\n\nTabel 5\n\n|  |  |\n| --- | --- |\n| Verbruik | 3 493 180 |"
+            "\n\n*Bron:* klager.\n\n(2) Tweede overweging.") in markdown
+    assert [e.anker for e in eenheden if e.soort == "overweging"] == ["rec-1", "rec-2", "rec-3"]
+
+
+_GROEPSTITEL = (b'<P><GR.SEQ LEVEL="1"><TITLE><TI><NP><NO.P>7.4.</NO.P><TXT><HT TYPE="BOLD">Belang van '
+                b'leveranciers</HT></TXT></NP></TI></TITLE></GR.SEQ></P>')
+
+
+def test_een_genummerde_groepstitel_aan_het_eind_van_een_overweging_wordt_een_kopregel():
+    """32026R1929 (kb WP-120 B1): kop 7.4. staat in de bron als groep in overweging 258; het
+    Publicatieblad drukt hem als kop boven overweging 259. Tot dan `blok-in-alinea:NP`."""
+    groepen = OVERWEGINGEN_IN_GROEPEN.replace(
+        b"Eerste overweging.</TXT>", b"Eerste overweging.</TXT>" + _GROEPSTITEL, 1)
+    markdown, eenheden, onbekend, _ = formex_xml.omzetten(met_overwegingen_in_groepen(groepen))
+    assert onbekend == {}
+    assert "(1) Eerste overweging.\n\n**7.4.   Belang van leveranciers**\n\n**2.   BEOORDELING**" in markdown
+    assert [e.anker for e in eenheden if e.soort == "overweging"] == ["rec-1", "rec-2", "rec-3"]
+
+
+def test_een_groep_met_meer_dan_een_genummerde_titel_in_een_overweging_blijft_een_weigering():
+    groep = _GROEPSTITEL.replace(b"</TITLE></GR.SEQ>", b"</TITLE><P>Tekst eronder.</P></GR.SEQ>")
+    groepen = OVERWEGINGEN_IN_GROEPEN.replace(b"Eerste overweging.</TXT>", b"Eerste overweging.</TXT>" + groep, 1)
+    with pytest.raises(ConversionError, match="blok-in-alinea:NP"):
+        formex_xml.omzetten(met_overwegingen_in_groepen(groepen))
 
 
 @pytest.mark.parametrize("oud, nieuw, context", [
@@ -2724,3 +2775,43 @@ def test_een_datum_en_een_link_aaneen_geven_elk_hun_eigen_melding():
         "de omzetter neemt dat ongewijzigd over.",
         "De Formex-bron schrijft 1 keer een link (LINK) aaneen met het woord ervoor of erna ('Rekenkamerhttps'); "
         "de omzetter neemt dat ongewijzigd over."]
+
+
+# ------------------------------------------------------------------ kb WP-120: B2 en B3
+
+def test_een_leesteken_vooraan_de_nadruk_staat_buiten_de_markering():
+    """32020R1213 (B3): `Thunberg<HT TYPE="ITALIC">, Acer palmatum</HT>` werd `Thunberg*, Acer palmatum*`,
+    met letterlijke sterretjes; ook `var<HT>. napobrassica</HT>` in 32018L0100."""
+    act = ACT.replace(b"<TXT>eerste onderdeel;</TXT>",
+                      b'<TXT><HT TYPE="ITALIC">Acer japonicum</HT> Thunberg<HT TYPE="ITALIC">, Acer palmatum</HT>'
+                      b' Thunberg;</TXT>')
+    markdown = formex_xml.omzetten(formex_zip(act=act))[0]
+    assert "a) *Acer japonicum* Thunberg, *Acer palmatum* Thunberg;" in markdown
+
+
+def test_een_leesteken_achteraan_de_nadruk_blijft_binnen_de_markering():
+    """Geldige Markdown (`**n.e.g.**`, 540 keer in de meetlat); de raw-vorm verandert alleen waar ze stuk is."""
+    act = ACT.replace(b"<TXT>eerste onderdeel;</TXT>", b'<TXT>zie <HT TYPE="BOLD">n.e.g.</HT> hierna;</TXT>')
+    assert "a) zie **n.e.g.** hierna;" in formex_xml.omzetten(formex_zip(act=act))[0]
+
+
+def test_een_bis_bijlage_krijgt_een_eigen_anker():
+    """02022R2309-20251215 (B2): `BIJLAGE I bis` gaf een tweede `annex-1`, zoals `art-49bis` en `hfd-9bis`."""
+    data = _met_bijlagen(_bijlage(b"BIJLAGE I", b"<P>Een.</P>"), _bijlage(b"BIJLAGE I bis", b"<P>Een bis.</P>"),
+                         _bijlage(b"BIJLAGE II", b"<P>Twee.</P>"))
+    assert _ankers(data, "bijlage") == ["annex-1", "annex-1bis", "annex-2"]
+
+
+def test_een_meerledig_onderdeelnummer_zonder_slotpunt_is_gemeten():
+    """Bijlage II bij 32020L0012 (B2): `3.1.` onder de matroos, `3.1` onder de schipper."""
+    inhoud = (_kopdeel(b"3.", b"Lading", _genummerd(b"3.1.", b"<P>De matroos stuwt.</P>"))
+              + _kopdeel(b"4.", b"Schipper", _genummerd(b"3.1", b"<P>De schipper plant.</P>")))
+    markdown, eenheden, _, _ = formex_xml.omzetten(_met_bijlagen(_bijlage(b"BIJLAGE II", inhoud)))
+    assert "3.1   De schipper plant." in markdown
+    assert [e.anker for e in eenheden if e.soort == "bijlagedeel"] == [
+        "annex-2-3", "annex-2-3-3-1", "annex-2-4", "annex-2-4-3-1"]
+
+
+def test_een_kaal_onderdeelnummer_zonder_punt_blijft_niet_gemeten():
+    with pytest.raises(ConversionError, match="niet de gemeten vorm"):
+        formex_xml.omzetten(_met_bijlagen(_bijlage(b"BIJLAGE I", _genummerd(b"3", b"<P>Tekst.</P>"))))

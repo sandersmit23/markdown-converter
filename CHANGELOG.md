@@ -3,6 +3,32 @@
 Nieuwste bovenaan. De inhoudelijke uitleg staat in `CLAUDE.md`; hier alleen wat er
 veranderde en waarom.
 
+## 8 november 2026 — handelsverdediging, `bis`-bijlage, randnadruk en HvJ-tabelcellen (kb WP-120 deel B)
+
+Uit de testrun van de kennisbank van 7 november 2026: 70 willekeurig getrokken EUR-Lex-handelingen en EU-arresten
+uit 2020–2026, waarvan de converter er 8 weigerde.
+
+- **Considerans van een handelsverdedigingsverordening** (B1, besluit 10.7 van kb-plan 10): de kop van een groep
+  overwegingen (`DIV.CONSID`) draagt de nadruk van de bron (`**1.   PROCEDURE**`; gemengde of geen opmaak blijft
+  kaal); een tabel direct in een groep wordt een tabel zonder eenheid (tot dan `overwegingen:TBL`, 32023R1404); een
+  groep met alleen een genummerde titel aan het eind van een overweging is een kopregel in dezelfde vorm (tot dan
+  `blok-in-alinea:NP`, 32026R1929). In een bijlage blijft zo'n titel een weigering.
+- **`BIJLAGE I bis`** (B2): eigen anker `annex-1bis`, zoals `hfd-9bis` (tot dan twee keer `annex-1`, 02022R2309-20251215).
+  Een meerledig onderdeelnummer zonder slotpunt (`3.1` naast `3.1.`, 32020L0012) is gemeten; een kaal `3` niet.
+- **Nadruk die met een leesteken begint** (B3): het leesteken staat buiten de sterretjes, `Thunberg, *Acer palmatum*`
+  in plaats van `Thunberg*, Acer palmatum*` met letterlijke sterretjes (02020R1213-20230729; ook 32018L0100). Een
+  leesteken achteraan blijft binnen (`**n.e.g.**`, geldige Markdown).
+- **HvJ-tabelcel** (B4, `formex_hof.py`): `<BR/>` in een cel is een spatie (62023CJ0129), een afbeelding als enige
+  inhoud van een cel een lege cel met `afbeeldingen_weggelaten` (62023CJ0330). Buiten een cel blijft `BR` een
+  weigering, en een afbeelding naast tekst in een cel ook.
+- Tests: 721 (13 nieuw, waarvan 8 op de oude code falen; 5 bewaken wat gelijk blijft), en
+  `test_overwegingen_in_een_groep_blijven_overwegingen_en_hun_kop_wordt_een_alinea` bewust bijgesteld op de vette kop.
+  Meetlat (alleen Formex): doorlaat gelijk (wetgeving 246/266, hof 41/41), elf documenten andere uitvoer, alle bedoeld:
+  acht met een vette of cursieve groepskop (32023D1795, 32021D1772, 32016D2393, 32016D0649, 32017R0220, 32017R0941,
+  32017D2116, 32025R1330), 32018L0100 (`var. *napobrassica*`) en 32022R2554 met zijn
+  geconsolideerde versie (een vette komma `(1)**,**` wordt `(1),`). Van de 70 getuigen weigert de converter er nog 3
+  (twee keer `FORMULA`, bewust; 32020L0012 op een tabelrij met minder cellen dan kolommen, fail-closed).
+
 ## 9 oktober 2026 — een blok in een Formex-alinea en een `LINK` vast aan een woord (kb WP-115)
 
 - **Een groep of definitielijst in een alinea** (`splits_blokken()`, `blok_in_alinea()`): een `GR.SEQ` in een `P`,
